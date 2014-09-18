@@ -20,7 +20,6 @@ audioPlayer.addPlaybackEndedListener(new PlaybackEndedListener() {
 
         @Override
         public void playbackEnded(MediaComponent component) {
-                component.stop();
                 component.setSource(new FileResource(new File("/path/to/next/song.m4a")));
                 component.play();
         }
