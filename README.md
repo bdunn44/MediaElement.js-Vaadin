@@ -1,7 +1,9 @@
 MEJS-Vaadin
 ===========
 
-A server-side MediaElement.js player component for Vaadin
+This Vaadin add-on provides a MediaElement.js media player component with hooks into client-side events and methods that allow you to play music/videos, control the player from the server side, and listen to player events such as Paused, Seeked, PlaybackEnded, etc.
+
+MediaElement.js is a fully-featured HTML5 audo & video player with Flash and Silverlight fallback for older browsers. It supports a wide array of audio formats. See the MediaElement.js website for more details.
 
 
 Code Example
