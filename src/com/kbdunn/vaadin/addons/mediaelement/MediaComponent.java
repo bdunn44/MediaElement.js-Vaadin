@@ -12,6 +12,7 @@ import com.vaadin.server.Resource;
 import com.vaadin.server.ResourceReference;
 import com.vaadin.ui.AbstractJavaScriptComponent;
 import com.vaadin.ui.JavaScriptFunction;
+import com.vaadin.ui.UI;
 
 @JavaScript({"vaadin://addons/js/media-element/jquery.js", "vaadin://addons/js/media-element/mediaelement-and-player.min.js", 
 	"vaadin://addons/js/mejslibrary.js", "vaadin://addons/js/mediacomponent-connector.js"})
@@ -32,14 +33,14 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	private ArrayList<LoadedDataListener> loadedDataListeners = new ArrayList<LoadedDataListener>();
 
 	public MediaComponent(String playerType) {
-		initPlayer(playerType, getDefaultOptions(), true, false);
+		init(playerType, getDefaultOptions(), true, false);
 	}
 	
 	public MediaComponent(String playerType, MediaComponentOptions options) {
-		initPlayer(playerType, options, true, false);
+		init(playerType, options, true, false);
 	}
 	
-	private void initPlayer(String playerType, MediaComponentOptions options, boolean flashFallback, 
+	private void init(String playerType, MediaComponentOptions options, boolean flashFallback, 
 			boolean silverlightFallback) {
 		
 		if (playerType.equals(AUDIO_PLAYER) || playerType.equals(VIDEO_PLAYER))
@@ -50,6 +51,12 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		getState().silverlightFallbackEnabled = silverlightFallback;
 		getState().flashFallbackEnabled = flashFallback;
 		callFunction("initPlayer", new Object[]{});
+	}
+	
+	// NPE when setting source to a file resource - UI was not found correctly
+	@Override
+	public UI getUI() {
+		return UI.getCurrent();
 	}
 	
 	public Resource getSource() {

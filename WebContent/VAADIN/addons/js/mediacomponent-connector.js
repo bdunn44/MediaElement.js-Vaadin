@@ -1,7 +1,7 @@
-window.com_kbdunn_nweb_ui_player_mediaelement_MediaComponent = function (element) {
+com_kbdunn_vaadin_addons_mediaelement_MediaComponent = function () {
 	
 	// Debugger 
-	var debugMode = true;
+	var debugMode = false;
 	this.dumpState = function () {
 		console.log("Dumping shared state information....");
 		console.log("Player Type: " + this.getState().playerType);
