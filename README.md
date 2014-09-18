@@ -5,6 +5,7 @@ This Vaadin add-on provides a MediaElement.js media player component with hooks 
 
 MediaElement.js is a fully-featured HTML5 audo & video player with Flash and Silverlight fallback for older browsers. It supports a wide array of audio formats. See the MediaElement.js website for more details.
 
+Vaadin Directory: http://vaadin.com/addon/mediaelementjs-player
 
 Code Example
 =============
