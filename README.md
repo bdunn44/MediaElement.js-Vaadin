@@ -6,7 +6,7 @@ A server-side MediaElement.js player component for Vaadin
 
 Code Example
 =============
-
+```java
 import com.kbdunn.vaadin.addons.mediaelement.MediaComponent;
 
 // Audio player with playbackEnded listener
@@ -28,3 +28,4 @@ audioPlayer.play();
 MediaComponent videoPlayer = new MediaComponent(MediaComponent.AUDIO_PLAYER);
 layout.addComponent(videoPlayer);
 videoPlayer.setSource(new FileResource(new File("/path/to/video.mp4")));
+```
