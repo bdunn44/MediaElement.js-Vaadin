@@ -12,7 +12,7 @@ Code Example
 ```java
 import com.kbdunn.vaadin.addons.mediaelement.MediaComponent;
 
-// Audio player with playbackEnded listener
+// Audio player with PlaybackEndedListener
 MediaComponent audioPlayer = new MediaComponent(MediaComponent.AUDIO_PLAYER);
 layout.addComponent(audioPlayer);
 audioPlayer.setSource(new FileResource(new File("/path/to/song.mp3")));
