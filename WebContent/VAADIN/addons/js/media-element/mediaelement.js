@@ -7,7 +7,7 @@
 * for browsers that don't understand HTML5 or can't play the provided codec
 * Can play MP4 (H.264), Ogg, WebM, FLV, WMV, WMA, ACC, and MP3
 *
-* Copyright 2010-2013, John Dyer (http://j.hn)
+* Copyright 2010-2014, John Dyer (http://j.hn)
 * License: MIT
 *
 */
@@ -15,7 +15,7 @@
 var mejs = mejs || {};
 
 // version number
-mejs.version = '2.13.2'; 
+mejs.version = '2.15.1'; 
 
 
 // player number (for missing, same id attr)
@@ -27,7 +27,7 @@ mejs.plugins = {
 		{version: [3,0], types: ['video/mp4','video/m4v','video/mov','video/wmv','audio/wma','audio/m4a','audio/mp3','audio/wav','audio/mpeg']}
 	],
 	flash: [
-		{version: [9,0,124], types: ['video/mp4','video/m4v','video/mov','video/flv','video/rtmp','video/x-flv','audio/flv','audio/x-flv','audio/mp3','audio/m4a','audio/mpeg', 'video/youtube', 'video/x-youtube']}
+		{version: [9,0,124], types: ['video/mp4','video/m4v','video/mov','video/flv','video/rtmp','video/x-flv','audio/flv','audio/x-flv','audio/mp3','audio/m4a','audio/mpeg', 'video/youtube', 'video/x-youtube', 'application/x-mpegURL']}
 		//,{version: [12,0], types: ['video/webm']} // for future reference (hopefully!)
 	],
 	youtube: [
@@ -320,6 +320,7 @@ mejs.MediaFeatures = {
 		t.isBustedNativeHTTPS = (location.protocol === 'https:' && (ua.match(/android [12]\./) !== null || ua.match(/macintosh.* version.* safari/) !== null));
 		t.isIE = (nav.appName.toLowerCase().indexOf("microsoft") != -1 || nav.appName.toLowerCase().match(/trident/gi) !== null);
 		t.isChrome = (ua.match(/chrome/gi) !== null);
+		t.isChromium = (ua.match(/chromium/gi) !== null);
 		t.isFirefox = (ua.match(/firefox/gi) !== null);
 		t.isWebkit = (ua.match(/webkit/gi) !== null);
 		t.isGecko = (ua.match(/gecko/gi) !== null) && !t.isWebkit && !t.isIE;
@@ -385,13 +386,13 @@ mejs.MediaFeatures = {
 			}
 			
 			t.isFullScreen = function() {
-				if (v.mozRequestFullScreen) {
+				if (t.hasMozNativeFullScreen) {
 					return d.mozFullScreen;
 				
-				} else if (v.webkitRequestFullScreen) {
+				} else if (t.hasWebkitNativeFullScreen) {
 					return d.webkitIsFullScreen;
 				
-				} else if (v.hasMsNativeFullScreen) {
+				} else if (t.hasMsNativeFullScreen) {
 					return d.msFullscreenElement !== null;
 				}
 			}
@@ -535,7 +536,7 @@ mejs.PluginMediaElement.prototype = {
 	// HTML5 methods
 	play: function () {
 		if (this.pluginApi != null) {
-			if (this.pluginType == 'youtube') {
+			if (this.pluginType == 'youtube' || this.pluginType == 'vimeo') {
 				this.pluginApi.playVideo();
 			} else {
 				this.pluginApi.playMedia();
@@ -545,7 +546,7 @@ mejs.PluginMediaElement.prototype = {
 	},
 	load: function () {
 		if (this.pluginApi != null) {
-			if (this.pluginType == 'youtube') {
+			if (this.pluginType == 'youtube' || this.pluginType == 'vimeo') {
 			} else {
 				this.pluginApi.loadMedia();
 			}
@@ -555,7 +556,7 @@ mejs.PluginMediaElement.prototype = {
 	},
 	pause: function () {
 		if (this.pluginApi != null) {
-			if (this.pluginType == 'youtube') {
+			if (this.pluginType == 'youtube' || this.pluginType == 'vimeo') {
 				this.pluginApi.pauseVideo();
 			} else {
 				this.pluginApi.pauseMedia();
@@ -567,7 +568,7 @@ mejs.PluginMediaElement.prototype = {
 	},
 	stop: function () {
 		if (this.pluginApi != null) {
-			if (this.pluginType == 'youtube') {
+			if (this.pluginType == 'youtube' || this.pluginType == 'vimeo') {
 				this.pluginApi.stopVideo();
 			} else {
 				this.pluginApi.stopMedia();
@@ -637,7 +638,7 @@ mejs.PluginMediaElement.prototype = {
 	},
 	setCurrentTime: function (time) {
 		if (this.pluginApi != null) {
-			if (this.pluginType == 'youtube') {
+			if (this.pluginType == 'youtube' || this.pluginType == 'vimeo') {
 				this.pluginApi.seekTo(time);
 			} else {
 				this.pluginApi.setCurrentTime(time);
@@ -680,7 +681,7 @@ mejs.PluginMediaElement.prototype = {
 	setVideoSize: function (width, height) {
 		
 		//if (this.pluginType == 'flash' || this.pluginType == 'silverlight') {
-			if ( this.pluginElement.style) {
+			if (this.pluginElement && this.pluginElement.style) {
 				this.pluginElement.style.width = width + 'px';
 				this.pluginElement.style.height = height + 'px';
 			}
@@ -719,7 +720,7 @@ mejs.PluginMediaElement.prototype = {
 		var callbacks = this.events[eventName];
 		if (!callbacks) return true;
 		if (!callback) { this.events[eventName] = []; return true; }
-		for (i = 0; i < callbacks.length; i++) {
+		for (var i = 0; i < callbacks.length; i++) {
 			if (callbacks[i] === callback) {
 				this.events[eventName].splice(i, 1);
 				return true;
@@ -1032,6 +1033,12 @@ mejs.HtmlMediaElementShim = {
 			};
 		}		
 		
+		// special case for Chromium to specify natively supported video codecs (i.e. WebM and Theora) 
+		if (mejs.MediaFeatures.isChromium) { 
+			htmlMediaElement.canPlayType = function(type) { 
+				return (type.match(/video\/(webm|ogv|ogg)/gi) !== null) ? 'maybe' : ''; 
+			}; 
+		}
 
 		// test for native playback first
 		if (supportsMediaTag && (options.mode === 'auto' || options.mode === 'auto_plugin' || options.mode === 'native')  && !(mejs.MediaFeatures.isBustedNativeHTTPS && options.httpsBasicAuthSite === true)) {
@@ -1049,9 +1056,11 @@ mejs.HtmlMediaElementShim = {
 				
 			for (i=0; i<mediaFiles.length; i++) {
 				// normal check
-				if (htmlMediaElement.canPlayType(mediaFiles[i].type).replace(/no/, '') !== '' 
+				if (mediaFiles[i].type == "video/m3u8" || htmlMediaElement.canPlayType(mediaFiles[i].type).replace(/no/, '') !== ''
 					// special case for Mac/Safari 5.0.3 which answers '' to canPlayType('audio/mp3') but 'maybe' to canPlayType('audio/mpeg')
-					|| htmlMediaElement.canPlayType(mediaFiles[i].type.replace(/mp3/,'mpeg')).replace(/no/, '') !== '') {
+					|| htmlMediaElement.canPlayType(mediaFiles[i].type.replace(/mp3/,'mpeg')).replace(/no/, '') !== ''
+					// special case for m4a supported by detecting mp4 support
+					|| htmlMediaElement.canPlayType(mediaFiles[i].type.replace(/m4a/,'mp4')).replace(/no/, '') !== '') {
 					result.method = 'native';
 					result.url = mediaFiles[i].url;
 					break;
@@ -1144,7 +1153,7 @@ mejs.HtmlMediaElementShim = {
 	getTypeFromFile: function(url) {
 		url = url.split('?')[0];
 		var ext = url.substring(url.lastIndexOf('.') + 1).toLowerCase();
-		return (/(mp4|m4v|ogg|ogv|webm|webmv|flv|wmv|mpeg|mov)/gi.test(ext) ? 'video' : 'audio') + '/' + this.getTypeFromExtension(ext);
+		return (/(mp4|m4v|ogg|ogv|m3u8|webm|webmv|flv|wmv|mpeg|mov)/gi.test(ext) ? 'video' : 'audio') + '/' + this.getTypeFromExtension(ext);
 	},
 	
 	getTypeFromExtension: function(ext) {
@@ -1152,6 +1161,7 @@ mejs.HtmlMediaElementShim = {
 		switch (ext) {
 			case 'mp4':
 			case 'm4v':
+			case 'm4a':
 				return 'mp4';
 			case 'webm':
 			case 'webma':
@@ -1217,8 +1227,8 @@ mejs.HtmlMediaElementShim = {
 
 		// check for placement inside a <p> tag (sometimes WYSIWYG editors do this)
 		node = htmlMediaElement.parentNode;
-		while (node !== null && node.tagName.toLowerCase() != 'body') {
-			if (node.parentNode.tagName.toLowerCase() == 'p') {
+		while (node !== null && node.tagName.toLowerCase() !== 'body' && node.parentNode != null) {
+			if (node.parentNode.tagName.toLowerCase() === 'p') {
 				node.parentNode.parentNode.insertBefore(node, node.parentNode);
 				break;
 			}
@@ -1345,9 +1355,18 @@ mejs.HtmlMediaElementShim = {
 			case 'youtube':
 			
 				
-				var
+				var videoId;
+				// youtu.be url from share button
+				if (playback.url.lastIndexOf("youtu.be") != -1) {
+					videoId = playback.url.substr(playback.url.lastIndexOf('/')+1);
+					if (videoId.indexOf('?') != -1) {
+						videoId = videoId.substr(0, videoId.indexOf('?'));
+					}
+				}
+				else {
 					videoId = playback.url.substr(playback.url.lastIndexOf('=')+1);
-					youtubeSettings = {
+				}
+				youtubeSettings = {
 						container: container,
 						containerId: container.id,
 						pluginMediaElement: pluginMediaElement,
@@ -1367,23 +1386,79 @@ mejs.HtmlMediaElementShim = {
 			
 			// DEMO Code. Does NOT work.
 			case 'vimeo':
-				//
-				
+				var player_id = pluginid + "_player";
 				pluginMediaElement.vimeoid = playback.url.substr(playback.url.lastIndexOf('/')+1);
 				
-				container.innerHTML ='<iframe src="http://player.vimeo.com/video/' + pluginMediaElement.vimeoid + '?portrait=0&byline=0&title=0" width="' + width +'" height="' + height +'" frameborder="0" class="mejs-shim"></iframe>';
-				
-				/*
-				container.innerHTML =
-					'<object width="' + width + '" height="' + height + '" class="mejs-shim">' +
-						'<param name="allowfullscreen" value="true" />' +
-						'<param name="allowscriptaccess" value="always" />' +
-						'<param name="flashvars" value="api=1" />' + 
-						'<param name="movie" value="http://vimeo.com/moogaloop.swf?clip_id=' + pluginMediaElement.vimeoid  + '&amp;server=vimeo.com&amp;show_title=0&amp;show_byline=0&amp;show_portrait=0&amp;color=00adef&amp;fullscreen=1&amp;autoplay=0&amp;loop=0" />' +
-						'<embed src="//vimeo.com/moogaloop.swf?api=1&amp;clip_id=' + pluginMediaElement.vimeoid + '&amp;server=vimeo.com&amp;show_title=0&amp;show_byline=0&amp;show_portrait=0&amp;color=00adef&amp;fullscreen=1&amp;autoplay=0&amp;loop=0" type="application/x-shockwave-flash" allowfullscreen="true" allowscriptaccess="always" width="' + width + '" height="' + height + '" class="mejs-shim"></embed>' +
-					'</object>';
-					*/
-									
+				container.innerHTML ='<iframe src="//player.vimeo.com/video/' + pluginMediaElement.vimeoid + '?api=1&portrait=0&byline=0&title=0&player_id=' + player_id + '" width="' + width +'" height="' + height +'" frameborder="0" class="mejs-shim" id="' + player_id + '"></iframe>';
+				if (typeof($f) == 'function') { // froogaloop available
+					var player = $f(container.childNodes[0]);
+					player.addEvent('ready', function() {
+						$.extend( player, {
+							playVideo: function() {
+								player.api( 'play' );
+							}, 
+							stopVideo: function() {
+								player.api( 'unload' );
+							}, 
+							pauseVideo: function() {
+								player.api( 'pause' );
+							}, 
+							seekTo: function( seconds ) {
+								player.api( 'seekTo', seconds );
+							}, 
+							setVolume: function( volume ) {
+								player.api( 'setVolume', volume );
+							}, 
+							setMuted: function( muted ) {
+								if( muted ) {
+									player.lastVolume = player.api( 'getVolume' );
+									player.api( 'setVolume', 0 );
+								} else {
+									player.api( 'setVolume', player.lastVolume );
+									delete player.lastVolume;
+								}
+							}
+						});
+
+						function createEvent(player, pluginMediaElement, eventName, e) {
+							var obj = {
+								type: eventName,
+								target: pluginMediaElement
+							};
+							if (eventName == 'timeupdate') {
+								pluginMediaElement.currentTime = obj.currentTime = e.seconds;
+								pluginMediaElement.duration = obj.duration = e.duration;
+							}
+							pluginMediaElement.dispatchEvent(obj.type, obj);
+						}
+
+						player.addEvent('play', function() {
+							createEvent(player, pluginMediaElement, 'play');
+							createEvent(player, pluginMediaElement, 'playing');
+						});
+
+						player.addEvent('pause', function() {
+							createEvent(player, pluginMediaElement, 'pause');
+						});
+
+						player.addEvent('finish', function() {
+							createEvent(player, pluginMediaElement, 'ended');
+						});
+
+						player.addEvent('playProgress', function(e) {
+							createEvent(player, pluginMediaElement, 'timeupdate', e);
+						});
+
+						pluginMediaElement.pluginElement = container;
+						pluginMediaElement.pluginApi = player;
+
+						// init mejs
+						mejs.MediaPluginBridge.initPlugin(pluginid);
+					});
+				}
+				else {
+					console.warn("You need to include froogaloop for vimeo to work");
+				}
 				break;			
 		}
 		// hide original element
@@ -1539,7 +1614,7 @@ mejs.YouTubeApi = {
 				},
 				length: 1
 			};
-			
+
 		}
 		
 		// send event up the chain
@@ -1622,6 +1697,8 @@ mejs.YouTubeApi = {
 		setInterval(function() {
 			mejs.YouTubeApi.createEvent(player, pluginMediaElement, 'timeupdate');
 		}, 250);
+		
+		mejs.YouTubeApi.createEvent(player, pluginMediaElement, 'canplay');
 	},
 	
 	handleStateChange: function(youTubeState, player, pluginMediaElement) {

@@ -10,12 +10,14 @@ mejslibrary.MediaComponent = function (element, mejsOptions, mcOptions, rpcOptio
 		element.removeChild(clone);
 	}
 	
+	var mejsid = mcOptions.mejsUid;
+	
 	var videoElement = 
-		'<video id="mejsplayer" controls="controls" preload="none">' +
+		'<video id="' + mejsid  + '" controls="controls" preload="none">' +
 			'<source type="video/mp4" src="nothing" />' +
 		'</video>';
 	var audioElement = 
-		'<audio id="mejsplayer" controls="controls" preload="none">' +
+		'<audio id="' + mejsid + '" controls="controls" preload="none">' +
 			'<source type="audio/mp3" src="nothing" />' +
 		'</audio>';
 	
@@ -43,34 +45,61 @@ mejslibrary.MediaComponent = function (element, mejsOptions, mcOptions, rpcOptio
 	// Enable Flash and/or Silverlight fallback
 	if (mcOptions.flash == true) {
 		console.log("Adding Flash fallback");
-		$("#mejsplayer").append(flashFallback);
+		$("#" + mejsid).append(flashFallback);
 	}
 	if (mcOptions.silverlight == true) {
 		console.log("Adding Silverlight fallback");
-		$("#mejsplayer").append(silverlightFallback);
+		$("#" + mejsid).append(silverlightFallback);
 	}
 	
-	// Create success function
+	// Define success function in MEJS options
 	mejsOptions.success = function (mediaElement, domObject) {
         // add event listeners
 		if (rpcOptions.playbackEndedRpc == true) { mediaElement.addEventListener('ended', ended, false); };
 		if (rpcOptions.canPlayRpc == true) { mediaElement.addEventListener('canplay', canplay, false); };
-		if (rpcOptions.loadedMetadataRpc == true) { mediaElement.addEventListener('loadedmetadata', ended, false); };
-		if (rpcOptions.pausedRpc == true) { mediaElement.addEventListener('pause', ended, false); };
+		if (rpcOptions.loadedMetadataRpc == true) { mediaElement.addEventListener('loadedmetadata', loadedmetadata, false); };
+		if (rpcOptions.pauseRpc == true) { mediaElement.addEventListener('pause', pause, false); };
 		if (rpcOptions.playingRpc == true) { mediaElement.addEventListener('playing', playing, false); };
+		if (rpcOptions.playRpc == true) { mediaElement.addEventListener('play', play, false); };
 		if (rpcOptions.seekedRpc == true) { mediaElement.addEventListener('seeked', seeked, false); };
-		if (rpcOptions.volumeChangeRpc == true) { mediaElement.addEventListener('volumechange', ended, false); };
+		if (rpcOptions.volumeChangeRpc == true) { mediaElement.addEventListener('volumechange', volumechange, false); };
 		if (rpcOptions.loadedDataRpc == true) { mediaElement.addEventListener('loadeddata', loadeddata, false); };
     };
-	
-	var mejsplayer = new MediaElementPlayer($("#mejsplayer"), mejsOptions);
+    
+	// Create the MEJS player
+	var mejsplayer = new MediaElementPlayer($("#" + mejsid), mejsOptions);
 	
 	// Sets a new source
 	this.setSource = function (sources) {
-		mejsplayer.setSrc(sources);
-		$("#mejsplayer object param[name='flashvars']").attr("value", "controls=true&amp;file=" + sources[0].src);
+		console.log("Setting source to " + sources[0].src + " for mejs id #" + mejsid);
+		mejsplayer.setSrc(sources[0].src);
+		$("#" + mejsid + " object param[name='flashvars']").attr("value", "controls=true&amp;file=" + sources[0].src);
 		mejsplayer.load();
 	};
+	
+	// Keep track of added event listeners
+	/*var addedListeners = {};
+	function addEventListener(eventType, func) {
+		console.log("Adding listener " + eventType);
+		if (addedListeners[eventType]) return;
+		if (!mejsplayer) return;
+		addedListeners[eventType] = func;
+		mejsplayer.addEventListener(eventType, func, false);
+	}*/
+	
+	// Only add event listeners that have been enabled
+	/*this.refreshListeners = function(rpcOptions) {
+		console.log("Refreshing Listeners...");
+		if (rpcOptions.playbackEndedRpc == true) { addEventListener('ended', ended); };
+		if (rpcOptions.canPlayRpc == true) { addEventListener('canplay', canplay); };
+		if (rpcOptions.loadedMetadataRpc == true) { addEventListener('loadedmetadata', loadedmetadata); };
+		if (rpcOptions.pauseRpc == true) { addEventListener('pause', pause); };
+		if (rpcOptions.playingRpc == true) { addEventListener('playing', playing); };
+		if (rpcOptions.playRpc == true) { addEventListener('play', play); };
+		if (rpcOptions.seekedRpc == true) { addEventListener('seeked', seeked); };
+		if (rpcOptions.volumeChangeRpc == true) { addEventListener('volumechange', volumechange); };
+		if (rpcOptions.loadedDataRpc == true) { addEventListener('loadeddata', loadeddata); };
+	};*/
 	
 	// Builds the current state of the MEJS player
 	this.playerState = function () {
@@ -103,8 +132,8 @@ mejslibrary.MediaComponent = function (element, mejsOptions, mcOptions, rpcOptio
 	// RPC calls to server (events)
 	var self = this;
 	function ended () {
-		console.log("Client notification: ended");
-		self.notifyEnded();
+		console.log("Client notification: playbackended");
+		self.notifyPlaybackEnded();
 	};
 	function loadeddata () {
 		console.log("Client notification: loadeddata");
@@ -124,7 +153,11 @@ mejslibrary.MediaComponent = function (element, mejsOptions, mcOptions, rpcOptio
 	}
 	function pause () {
 		console.log("Client notification: pause");
-		self.notifyPause();
+		self.notifyPaused();
+	}
+	function play () {
+		console.log("Client notification: play");
+		self.notifyPlayed();
 	}
 	function loadedmetadata () {
 		console.log("Client notification: loadedmetadata");
@@ -132,6 +165,6 @@ mejslibrary.MediaComponent = function (element, mejsOptions, mcOptions, rpcOptio
 	}
 	function volumechange () {
 		console.log("Client notification: volumechange");
-		self.notifyVolumeChange();
+		self.notifyVolumeChanged();
 	}
 };

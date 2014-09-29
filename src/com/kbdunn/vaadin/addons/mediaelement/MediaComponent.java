@@ -14,40 +14,53 @@ import com.vaadin.ui.AbstractJavaScriptComponent;
 import com.vaadin.ui.JavaScriptFunction;
 import com.vaadin.ui.UI;
 
+
 @JavaScript({"vaadin://addons/js/media-element/jquery.js", "vaadin://addons/js/media-element/mediaelement-and-player.min.js", 
 	"vaadin://addons/js/mejslibrary.js", "vaadin://addons/js/mediacomponent-connector.js"})
 @StyleSheet("vaadin://addons/js/media-element/mediaelementplayer.min.css")
 public class MediaComponent extends AbstractJavaScriptComponent implements Serializable {
 	
 	private static final long serialVersionUID = 434066435674155085L;
-	public static final String AUDIO_PLAYER = "audio";
-	public static final String VIDEO_PLAYER = "video";
+	private static int componentUid = 0;
+	
+	public enum Type {
+		AUDIO("audio"), VIDEO("video");
+		
+		protected String value;
+		
+		Type(String value) {
+			this.value = value;
+		}
+	}
 	
 	private ArrayList<PlaybackEndedListener> playbackEndedListeners = new ArrayList<PlaybackEndedListener>();
 	private ArrayList<CanPlayListener> canPlayListeners = new ArrayList<CanPlayListener>();
 	private ArrayList<LoadedMetadataListener> loadedMetadataListeners = new ArrayList<LoadedMetadataListener>();
-	private ArrayList<PausedListener> pausedListeners = new ArrayList<PausedListener>();
+	private ArrayList<PausedListener> pauseListeners = new ArrayList<PausedListener>();
 	private ArrayList<PlayingListener> playingListeners = new ArrayList<PlayingListener>();
+	private ArrayList<PlayedListener> playListeners = new ArrayList<PlayedListener>();
 	private ArrayList<SeekedListener> seekedListeners = new ArrayList<SeekedListener>();
-	private ArrayList<VolumeChangeListener> volumeChangeListeners = new ArrayList<VolumeChangeListener>();
+	private ArrayList<VolumeChangedListener> volumeChangeListeners = new ArrayList<VolumeChangedListener>();
 	private ArrayList<LoadedDataListener> loadedDataListeners = new ArrayList<LoadedDataListener>();
 
-	public MediaComponent(String playerType) {
+
+	public MediaComponent(MediaComponent.Type playerType) {
 		init(playerType, getDefaultOptions(), true, false);
 	}
 	
-	public MediaComponent(String playerType, MediaComponentOptions options) {
+	public MediaComponent(MediaComponent.Type playerType, MediaComponentOptions options) {
 		init(playerType, options, true, false);
 	}
 	
-	private void init(String playerType, MediaComponentOptions options, boolean flashFallback, 
+	private void init(MediaComponent.Type playerType, MediaComponentOptions options, boolean flashFallback, 
 			boolean silverlightFallback) {
 		
-		if (playerType.equals(AUDIO_PLAYER) || playerType.equals(VIDEO_PLAYER))
+		if (playerType == Type.AUDIO || playerType == Type.VIDEO)
 			setPlayerType(playerType);
 		
 		addRpcFunctions();
 		setOptions(options);
+		getState().mejsUid = "mejsplayer-" + getUid();
 		getState().silverlightFallbackEnabled = silverlightFallback;
 		getState().flashFallbackEnabled = flashFallback;
 		callFunction("initPlayer", new Object[]{});
@@ -59,26 +72,33 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		return UI.getCurrent();
 	}
 	
+	public static MediaComponentOptions getDefaultOptions() {
+		return MediaComponentOptions.getDefaultOptions();
+	}
+	
+	private static synchronized int getUid() {
+		return componentUid++;
+	}
+	
 	public Resource getSource() {
 		return getResource("0");
 	}
 	
 	public void setSource(Resource source) {
-		if (!source.getMIMEType().startsWith("audio") && !source.getMIMEType().startsWith("video"))
+		if (!source.getMIMEType().startsWith("audio") && !source.getMIMEType().startsWith("video")) 
 			return;
 		
 		getState().sources = new ArrayList<MediaSource>();
 		getState().sources.add(createMediaResource(source, "0"));
-		//alignPlayerType(source);
-		callFunction("updateSource", new Object[]{});	
+		callFunction("initPlayer", new Object[]{});	
 	}
 	
-	public void addSource(Resource source) {
+	/*public void addSource(Resource source) {
 		if (getState().sources == null) setSource(source);
 		String key = String.valueOf(getState().sources.size() - 1);
 		getState().sources.add(createMediaResource(source, key));
-		callFunction("updateSource", new Object[]{});	
-	}
+		callFunction("initPlayer", new Object[]{});	
+	}*/
 	/*
 	private void alignPlayerType(Resource source) {
 		if (!source.getMIMEType().startsWith(getState().playerType)) {
@@ -108,8 +128,8 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		return getState().playerType;
 	}
 	
-	public void setPlayerType(String playerType) {
-		getState().playerType = playerType;
+	public void setPlayerType(MediaComponent.Type playerType) {
+		getState().playerType = playerType.value;
 	}
 	
 	public boolean flashFallbackEnabled() {
@@ -140,7 +160,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	
 	public void stop() {
 		getState().sources = null;
-		callFunction("initPlayer", new Object[]{});
+		callFunction("pause", new Object[]{});
 	}
 	
 	public void mute() {
@@ -153,8 +173,8 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 			callFunction("setVolume", new Object[]{ volume/10 });
 	}
 	
-	public void setCurrentTime() {
-		callFunction("setCurrentTime", new Object[]{});
+	public void setCurrentTime(int time) {
+		callFunction("setCurrentTime", new Object[]{ time });
 	}
 	
 	public boolean isPaused() {
@@ -202,7 +222,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	}
 	
 	private void addRpcFunctions() {
-		addFunction("playbackEnded", new JavaScriptFunction() {
+		addFunction("notifyPlaybackEnded", new JavaScriptFunction() {
 			private static final long serialVersionUID = 5490315638431042879L;
 
 			@Override
@@ -212,7 +232,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 			}
 		});
 		
-		addFunction("canPlay", new JavaScriptFunction() {
+		addFunction("notifyCanPlay", new JavaScriptFunction() {
 			private static final long serialVersionUID = 5490315638431042879L;
 
 			@Override
@@ -222,27 +242,37 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 			}
 		});
 		
-		addFunction("loadedMetadata", new JavaScriptFunction() {
+		addFunction("notifyLoadedMetadata", new JavaScriptFunction() {
 			private static final long serialVersionUID = 5490315638431042879L;
 
 			@Override
 			public void call(JSONArray arguments) throws JSONException {
 				for (LoadedMetadataListener listener : loadedMetadataListeners)
-					listener.loadedMetadata(getMe());
+					listener.metadataLoaded(getMe());
 			}
 		});
 		
-		addFunction("paused", new JavaScriptFunction() {
+		addFunction("notifyLoadedData", new JavaScriptFunction() {
 			private static final long serialVersionUID = 5490315638431042879L;
 
 			@Override
 			public void call(JSONArray arguments) throws JSONException {
-				for (PausedListener listener : pausedListeners)
+				for (LoadedDataListener listener : loadedDataListeners)
+					listener.dataLoaded(getMe());
+			}
+		});
+		
+		addFunction("notifyPaused", new JavaScriptFunction() {
+			private static final long serialVersionUID = 5490315638431042879L;
+
+			@Override
+			public void call(JSONArray arguments) throws JSONException {
+				for (PausedListener listener : pauseListeners)
 					listener.paused(getMe());
 			}
 		});
 		
-		addFunction("playing", new JavaScriptFunction() {
+		addFunction("notifyPlaying", new JavaScriptFunction() {
 			private static final long serialVersionUID = 5490315638431042879L;
 
 			@Override
@@ -252,7 +282,17 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 			}
 		});
 		
-		addFunction("seeked", new JavaScriptFunction() {
+		addFunction("notifyPlayed", new JavaScriptFunction() {
+			private static final long serialVersionUID = 5490315638431042879L;
+			
+			@Override
+			public void call(JSONArray arguments) throws JSONException {
+				for (PlayedListener listener : playListeners)
+					listener.played(getMe());
+			}
+		});
+		
+		addFunction("notifySeeked", new JavaScriptFunction() {
 			private static final long serialVersionUID = 5490315638431042879L;
 
 			@Override
@@ -262,12 +302,12 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 			}
 		});
 		
-		addFunction("volumeChanged", new JavaScriptFunction() {
+		addFunction("notifyVolumeChanged", new JavaScriptFunction() {
 			private static final long serialVersionUID = 5490315638431042879L;
 
 			@Override
 			public void call(JSONArray arguments) throws JSONException {
-				for (VolumeChangeListener listener : volumeChangeListeners)
+				for (VolumeChangedListener listener : volumeChangeListeners)
 					listener.volumeChanged(getMe());
 			}
 		});
@@ -301,10 +341,10 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		}
 	}
 	
-	public void addPausedListener(PausedListener listener) {
-		pausedListeners.add(listener);
-		if (!getState().pausedRpc) {
-			getState().pausedRpc = true;
+	public void addPauseListener(PausedListener listener) {
+		pauseListeners.add(listener);
+		if (!getState().pauseRpc) {
+			getState().pauseRpc = true;
 			callFunction("initPlayer", new Object[]{});
 		}
 	}
@@ -313,6 +353,14 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		playingListeners.add(listener);
 		if (!getState().playingRpc) {
 			getState().playingRpc = true;
+			callFunction("initPlayer", new Object[]{});
+		}
+	}
+
+	public void addPlayListener(PlayedListener listener) {
+		playListeners.add(listener);
+		if (!getState().playRpc) {
+			getState().playRpc = true;
 			callFunction("initPlayer", new Object[]{});
 		}
 	}
@@ -325,7 +373,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		}
 	}
 	
-	public void addVolumeChangeListener(VolumeChangeListener listener) {
+	public void addVolumeChangeListener(VolumeChangedListener listener) {
 		volumeChangeListeners.add(listener);
 		if (!getState().volumeChangeRpc) {
 			getState().volumeChangeRpc = true;
@@ -339,30 +387,5 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 			getState().loadedDataRpc = true;
 			callFunction("initPlayer", new Object[]{});
 		}
-	}
-	
-	public MediaComponentOptions getDefaultOptions() {
-		MediaComponentOptions opts = new MediaComponentOptions();
-		opts.setAlwaysShowControls(true);
-		opts.setAlwaysShowHours(false);
-		opts.setAndroidUseNativeControls(false);
-		//opts.setAudioHeight(30);
-		//opts.setAudioWidth(300);
-		//opts.setVideoHeight(-1);
-		//opts.setVideoWidth(-1);
-		opts.setEnableAutosize(true);
-		opts.setEnableKeyboard(false);
-		opts.setFeatures(new String[] { 
-				MediaComponentOptions.PLAY_PAUSE_FEATURE, 
-				MediaComponentOptions.PROGRESS_FEATURE, 
-				MediaComponentOptions.CURRENT_FEATURE, 
-				MediaComponentOptions.DURATION_FEATURE,
-				MediaComponentOptions.VOLUME_FEATURE, 
-				MediaComponentOptions.FULLSCREEN_FEATURE });
-		opts.setiPadUseNativeControls(false);
-		opts.setLoop(false);
-		opts.setPauseOtherPlayers(true);
-		opts.setStartVolume(8);
-		return opts;
 	}
 }

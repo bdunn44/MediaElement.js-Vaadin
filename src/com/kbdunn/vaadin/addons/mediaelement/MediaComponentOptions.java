@@ -38,6 +38,31 @@ public class MediaComponentOptions implements Serializable {
 	
 	public MediaComponentOptions() { }
 	
+	public static MediaComponentOptions getDefaultOptions() {
+		MediaComponentOptions opts = new MediaComponentOptions();
+		opts.setAlwaysShowControls(true);
+		opts.setAlwaysShowHours(false);
+		opts.setAndroidUseNativeControls(false);
+		//opts.setAudioHeight(30);
+		//opts.setAudioWidth(300);
+		//opts.setVideoHeight(-1);
+		//opts.setVideoWidth(-1);
+		opts.setEnableAutosize(true);
+		opts.setEnableKeyboard(false);
+		opts.setFeatures(new String[] { 
+				MediaComponentOptions.PLAY_PAUSE_FEATURE, 
+				MediaComponentOptions.PROGRESS_FEATURE, 
+				MediaComponentOptions.CURRENT_FEATURE, 
+				MediaComponentOptions.DURATION_FEATURE,
+				MediaComponentOptions.VOLUME_FEATURE, 
+				MediaComponentOptions.FULLSCREEN_FEATURE });
+		opts.setiPadUseNativeControls(false);
+		opts.setLoop(false);
+		opts.setPauseOtherPlayers(true);
+		opts.setStartVolume(8);
+		return opts;
+	}
+	
 	/*public int getDefaultVideoWidth() {
 		return defaultVideoWidth;
 	}
@@ -56,38 +81,38 @@ public class MediaComponentOptions implements Serializable {
 		
 	}*/
 	
-	protected int getVideoWidth() {
+	public int getVideoWidth() {
 		return videoWidth;
 	}
 	
-	protected void setVideoWidth(int videoWidth) {
+	public void setVideoWidth(int videoWidth) {
 		this.videoWidth = videoWidth;
 		
 	}
 	
-	protected int getVideoHeight() {
+	public int getVideoHeight() {
 		return videoHeight;
 	}
 	
-	protected void setVideoHeight(int videoHeight) {
+	public void setVideoHeight(int videoHeight) {
 		this.videoHeight = videoHeight;
 		
 	}
 	
-	protected int getAudioWidth() {
+	public int getAudioWidth() {
 		return audioWidth;
 	}
 	
-	protected void setAudioWidth(int audioWidth) {
+	public void setAudioWidth(int audioWidth) {
 		this.audioWidth = audioWidth;
 		
 	}
 	
-	protected int getAudioHeight() {
+	public int getAudioHeight() {
 		return audioHeight;
 	}
 	
-	protected void setAudioHeight(int audioHeight) {
+	public void setAudioHeight(int audioHeight) {
 		this.audioHeight = audioHeight;
 		
 	}

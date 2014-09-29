@@ -34,8 +34,9 @@ com_kbdunn_vaadin_addons_mediaelement_MediaComponent = function () {
 		console.log("  Playback Ended: " + this.getState().playbackEndedRpc);
 		console.log("  Can Play: " + this.getState().canPlayRpc);
 		console.log("  Loaded Metadata: " + this.getState().loadedMetadataRpc);
-		console.log("  Paused: " + this.getState().pausedRpc);
+		console.log("  Pause: " + this.getState().pauseRpc);
 		console.log("  Playing: " + this.getState().playingRpc);
+		console.log("  Play: " + this.getState().playRpc);
 		console.log("  Seeked: " + this.getState().seekedRpc);
 		console.log("  Volume Change: " + this.getState().volumeChangeRpc);
 		console.log("  Loaded Data: " + this.getState().loadedDataRpc);
@@ -50,14 +51,16 @@ com_kbdunn_vaadin_addons_mediaelement_MediaComponent = function () {
 		this.playbackEndedRpc = connector.getState().playbackEndedRpc;
 		this.canPlayRpc = connector.getState().canPlayRpc;
 		this.loadedMetadataRpc = connector.getState().loadedMetadataRpc;
-		this.pausedRpc = connector.getState().pausedRpc;
+		this.pauseRpc = connector.getState().pauseRpc;
 		this.playingRpc = connector.getState().playingRpc;
+		this.playRpc = connector.getState().playRpc;
 		this.seekedRpc = connector.getState().seekedRpc;
 		this.volumeChangeRpc = connector.getState().volumeChangeRpc;
 		this.loadedDataRpc = connector.getState().loadedDataRpc;
 	};
 	
 	this.mcOptions = function () {
+		this.mejsUid = connector.getState().mejsUid;
 		this.playerType = connector.getState().playerType;
 		this.flash = connector.getState().flashFallbackEnabled;
 		this.silverlight = connector.getState().silverlightFallbackEnabled;		
@@ -71,10 +74,15 @@ com_kbdunn_vaadin_addons_mediaelement_MediaComponent = function () {
 		if (debugMode === true) { this.dumpState(); };
 		if (this.mediaComponent) { delete this.mediaComponent; console.log("mediaComponent deleted"); };
 		this.mediaComponent = new mejslibrary.MediaComponent(this.getElement(), this.getState().options, new this.mcOptions, new this.rpcOptions);
-		//this.updateSource();
+		this.updateSource();
 	};
 	
-	// Updates the sources of the media player from information in the shared state
+	// Build the list of enabled RPC listeners from shared state, pass along to component
+	/*this.updateListeners = function() {
+		connector.mediaComponent.refreshListeners(new this.rpcOptions);
+	};*/
+	
+	// Update the sources of the media player from information in the shared state
 	this.updateSource = function() {
 		var sources = this.getState().sources;
 		if (!sources) { return; };
@@ -86,7 +94,6 @@ com_kbdunn_vaadin_addons_mediaelement_MediaComponent = function () {
 			console.log("Adding source '" + sources[i].src + " (" + sources[i].type + ")'");
 		}
 		
-		this.initPlayer();
 		this.mediaComponent.setSource(sources);
 	};
 	
@@ -120,10 +127,15 @@ com_kbdunn_vaadin_addons_mediaelement_MediaComponent = function () {
 	};
 	
 	// RPC calls to server
-	mejslibrary.MediaComponent.prototype.notifyEnded = function () {
+	mejslibrary.MediaComponent.prototype.notifyPlaybackEnded = function () {
 		connector.updateState();
 		if (connector.debugMode === true) { dumpState(); };
-		connector.playbackEnded();
+		connector.notifyPlaybackEnded();
+	};
+	mejslibrary.MediaComponent.prototype.notifyCanPlay = function () {
+		connector.updateState();
+		if (connector.debugMode === true) { dumpState(); };
+		connector.notifyCanPlay();
 	};
 	mejslibrary.MediaComponent.prototype.notifyLoadedData = function () {
 		connector.updateState();
@@ -140,19 +152,24 @@ com_kbdunn_vaadin_addons_mediaelement_MediaComponent = function () {
 		if (connector.debugMode === true) { dumpState(); };
 		connector.notifyPlaying();
 	};
-	mejslibrary.MediaComponent.prototype.notifyPause = function () {
+	mejslibrary.MediaComponent.prototype.notifyPaused = function () {
 		connector.updateState();
 		if (connector.debugMode === true) { dumpState(); };
-		connector.notifyPause();
+		connector.notifyPaused();
+	};
+	mejslibrary.MediaComponent.prototype.notifyPlayed = function () {
+		connector.updateState();
+		if (connector.debugMode === true) { dumpState(); };
+		connector.notifyPlayed();
 	};
 	mejslibrary.MediaComponent.prototype.notifyLoadedMetadata = function () {
 		connector.updateState();
 		if (connector.debugMode === true) { dumpState(); };
 		connector.notifyLoadedMetadata();
 	};
-	mejslibrary.MediaComponent.prototype.notifyVolumeChange = function () {
+	mejslibrary.MediaComponent.prototype.notifyVolumeChanged = function () {
 		connector.updateState();
 		if (connector.debugMode === true) { dumpState(); };
-		connector.notifyVolumeChange();
+		connector.notifyVolumeChanged();
 	};
 };

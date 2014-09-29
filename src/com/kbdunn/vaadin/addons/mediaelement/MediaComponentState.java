@@ -16,6 +16,9 @@ public class MediaComponentState extends JavaScriptComponentState {
 	// HTML5 player type (audio/video)
 	public String playerType;
 	
+	// ID of element
+	public String mejsUid;
+	
 	// Configure Flash and Silverlight fallback
 	public boolean flashFallbackEnabled;
 	public boolean silverlightFallbackEnabled;
@@ -24,8 +27,9 @@ public class MediaComponentState extends JavaScriptComponentState {
 	public boolean playbackEndedRpc = false;
 	public boolean canPlayRpc = false;
 	public boolean loadedMetadataRpc = false;
-	public boolean pausedRpc = false;
+	public boolean pauseRpc = false;
 	public boolean playingRpc = false;
+	public boolean playRpc = false;
 	public boolean seekedRpc = false;;
 	public boolean volumeChangeRpc = false;
 	public boolean loadedDataRpc = false;
