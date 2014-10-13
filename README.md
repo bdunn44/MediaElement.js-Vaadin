@@ -13,7 +13,7 @@ Code Example
 import com.kbdunn.vaadin.addons.mediaelement.MediaComponent;
 
 // Audio player with PlaybackEndedListener
-MediaComponent audioPlayer = new MediaComponent(MediaComponent.AUDIO_PLAYER);
+MediaComponent audioPlayer = new MediaComponent(MediaComponent.Type.AUDIO);
 layout.addComponent(audioPlayer);
 audioPlayer.setSource(new FileResource(new File("/path/to/song.mp3")));
 audioPlayer.addPlaybackEndedListener(new PlaybackEndedListener() {
@@ -27,7 +27,7 @@ audioPlayer.addPlaybackEndedListener(new PlaybackEndedListener() {
 audioPlayer.play();
 
 // Video player
-MediaComponent videoPlayer = new MediaComponent(MediaComponent.AUDIO_PLAYER);
+MediaComponent videoPlayer = new MediaComponent(MediaComponent.Type.VIDEO);
 layout.addComponent(videoPlayer);
 videoPlayer.setSource(new FileResource(new File("/path/to/video.mp4")));
 ```
