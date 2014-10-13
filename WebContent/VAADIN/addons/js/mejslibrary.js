@@ -1,3 +1,5 @@
+// Version 1.2.0
+
 // Define the namespace
 var mejslibrary = mejslibrary || {};
 
@@ -8,7 +10,22 @@ mejslibrary.MediaComponent = function (element, mejsOptions, mcOptions, rpcOptio
 		var clone = element.firstChild.cloneNode(true);
 		element.replaceChild(clone, element.firstChild);
 		element.removeChild(clone);
-	}
+	};
+	
+	// Store MEJS player state
+	var playerState = {
+		paused: undefined,
+		ended: undefined,
+		seeking: undefined,
+		duration: undefined,
+		muted: undefined,
+		volume: undefined,
+		currentTime: undefined
+	};
+	
+	this.getState = function() {  
+		return playerState;
+	};
 	
 	var mejsid = mcOptions.mejsUid;
 	
@@ -25,11 +42,10 @@ mejslibrary.MediaComponent = function (element, mejsOptions, mcOptions, rpcOptio
 	if (mcOptions.playerType == "audio") {
 		console.log("Creating an Audio player");
 		element.innerHTML = audioElement;
-	} 
-	else if (mcOptions.playerType == "video") {
+	} else if (mcOptions.playerType == "video") {
 		console.log("Creating a Video player");
 		element.innerHTML = videoElement;
-	}
+	};
 	
 	var flashFallback = 
 		'<object type="application/x-shockwave-flash" data="media-element/flashmediaelement.swf">' +
@@ -39,22 +55,41 @@ mejslibrary.MediaComponent = function (element, mejsOptions, mcOptions, rpcOptio
 	var silverlightFallback = 
 		'<object type="application/x-silverlight-2" data="media-element/silverlightmediaelement.xap">' +
 			'<param name="movie" value="media-element/silverlightmediaelement.xap" />' +
-			'<param name="flashvars" value="controls=true&file=myvideo.wmv" />' +
+			'<param name="flashvars" value="controls=true&file=nothing" />' +
 		'</object>';
 	
 	// Enable Flash and/or Silverlight fallback
-	if (mcOptions.flash == true) {
+	if (mcOptions.flash == true && mcOptions.silverlight == true) {
+		$("#" + mejsid).append(flashFallback);
+		$("#" + mejsid).append(silverlightFallback);
+		mejsOptions.plugins = ["flash", "silverlight"];
+	}
+	else if (mcOptions.flash == true) {
 		console.log("Adding Flash fallback");
 		$("#" + mejsid).append(flashFallback);
+		mejsOptions.plugins = ["flash"];
 	}
-	if (mcOptions.silverlight == true) {
+	else if (mcOptions.silverlight == true) {
 		console.log("Adding Silverlight fallback");
 		$("#" + mejsid).append(silverlightFallback);
-	}
+		mejsOptions.plugins = ["silverlight"];
+	};
 	
-	// Define success function in MEJS options
 	mejsOptions.success = function (mediaElement, domObject) {
-        // add event listeners
+
+		// Add client-side listeners to update state
+		mediaElement.addEventListener('ended', function(e) { updateState(mediaElement); });
+		mediaElement.addEventListener('canplay', function(e) { updateState(mediaElement); });
+		mediaElement.addEventListener('loadedmetadata', function(e) { updateState(mediaElement); });
+		mediaElement.addEventListener('pause', function(e) { updateState(mediaElement); });
+		mediaElement.addEventListener('playing', function(e) { updateState(mediaElement); });
+		mediaElement.addEventListener('play', function(e) { updateState(mediaElement); });
+		mediaElement.addEventListener('seeked', function(e) { updateState(mediaElement); });
+		mediaElement.addEventListener('volumechange', function(e) { updateState(mediaElement); });
+		mediaElement.addEventListener('loadeddata', function(e) { updateState(mediaElement); });
+		mediaElement.addEventListener('timeupdate', function(e) { updateState(mediaElement); });
+		
+        // Add RPC event listeners
 		if (rpcOptions.playbackEndedRpc == true) { mediaElement.addEventListener('ended', ended, false); };
 		if (rpcOptions.canPlayRpc == true) { mediaElement.addEventListener('canplay', canplay, false); };
 		if (rpcOptions.loadedMetadataRpc == true) { mediaElement.addEventListener('loadedmetadata', loadedmetadata, false); };
@@ -80,11 +115,11 @@ mejslibrary.MediaComponent = function (element, mejsOptions, mcOptions, rpcOptio
 	// Keep track of added event listeners
 	/*var addedListeners = {};
 	function addEventListener(eventType, func) {
-		console.log("Adding listener " + eventType);
 		if (addedListeners[eventType]) return;
-		if (!mejsplayer) return;
+		console.log("Adding listener " + eventType);
 		addedListeners[eventType] = func;
-		mejsplayer.addEventListener(eventType, func, false);
+		$("#" + mejsid).bind(eventType, func);
+		//mejsplayer.addEventListener(eventType, func, false);
 	}*/
 	
 	// Only add event listeners that have been enabled
@@ -101,16 +136,11 @@ mejslibrary.MediaComponent = function (element, mejsOptions, mcOptions, rpcOptio
 		if (rpcOptions.loadedDataRpc == true) { addEventListener('loadeddata', loadeddata); };
 	};*/
 	
-	// Builds the current state of the MEJS player
-	this.playerState = function () {
-		this.paused = mejsplayer.paused;
-		this.ended = mejsplayer.ended;
-		this.seeking = mejsplayer.seeking;
-		this.duration = mejsplayer.duration;
-		this.muted = mejsplayer.muted;
-		this.volume = mejsplayer.volume;
-		this.currentTime = mejsplayer.currentTime;
-	};
+	// Testing currenttime - WORKING
+	/*setInterval(outTime, 1000);
+	function outTime() {
+		console.log(playerState.currentTime);
+	};*/
 	
 	// RPC calls from server
 	this.play = function () {
@@ -120,7 +150,10 @@ mejslibrary.MediaComponent = function (element, mejsOptions, mcOptions, rpcOptio
 		mejsplayer.pause();
 	};
 	this.mute = function () {
-		mejsplayer.mute();
+		mejsplayer.setMuted(true);
+	};
+	this.unmute = function () {
+		mejsplayer.setMuted(false);
 	};
 	this.setVolume = function (volume) {
 		mejsplayer.setVolume(volume);
@@ -128,9 +161,20 @@ mejslibrary.MediaComponent = function (element, mejsOptions, mcOptions, rpcOptio
 	this.setCurrentTime = function (currentTime) {
 		mejsplayer.setCurrentTime(currentTime);
 	};
+
+	var self = this;
+	
+	function updateState(mediaElement) {
+		playerState.paused = mediaElement.paused;
+		playerState.ended = mediaElement.ended;
+		playerState.seeking = mediaElement.seeking;
+		playerState.duration = mediaElement.duration;
+		playerState.muted = mediaElement.muted;
+		playerState.volume = mediaElement.volume;
+		playerState.currentTime = mediaElement.currentTime;
+	};
 	
 	// RPC calls to server (events)
-	var self = this;
 	function ended () {
 		console.log("Client notification: playbackended");
 		self.notifyPlaybackEnded();
@@ -138,33 +182,33 @@ mejslibrary.MediaComponent = function (element, mejsOptions, mcOptions, rpcOptio
 	function loadeddata () {
 		console.log("Client notification: loadeddata");
 		self.notifyLoadedData();
-	}
+	};
 	function seeked () {
 		console.log("Client notification: seeked");
 		self.notifySeeked();
-	}
+	};
 	function canplay () {
 		console.log("Client notification: canplay");
 		self.notifyCanPlay();
-	}
+	};
 	function playing () {
 		console.log("Client notification: playing");
 		self.notifyPlaying();
-	}
+	};
 	function pause () {
 		console.log("Client notification: pause");
 		self.notifyPaused();
-	}
+	};
 	function play () {
 		console.log("Client notification: play");
 		self.notifyPlayed();
-	}
+	};
 	function loadedmetadata () {
 		console.log("Client notification: loadedmetadata");
 		self.notifyLoadedMetadata();
-	}
+	};
 	function volumechange () {
 		console.log("Client notification: volumechange");
 		self.notifyVolumeChanged();
-	}
+	};
 };

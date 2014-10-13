@@ -1,6 +1,7 @@
 package com.kbdunn.vaadin.addons.mediaelement;
 
 import java.util.List;
+import java.util.Map;
 
 import com.vaadin.shared.ui.JavaScriptComponentState;
 
@@ -11,7 +12,8 @@ public class MediaComponentState extends JavaScriptComponentState {
 	public List<MediaSource> sources; 
 	
 	// MediaElementJS options
-	public MediaComponentOptions options;
+	//public MediaComponentOptions options;
+	public Map<String, Object> options;
 	
 	// HTML5 player type (audio/video)
 	public String playerType;
@@ -40,6 +42,6 @@ public class MediaComponentState extends JavaScriptComponentState {
 	public boolean seeking;
 	public int duration;
 	public boolean muted;
-	public int volume;
+	public float volume;
 	public int currentTime;
 }

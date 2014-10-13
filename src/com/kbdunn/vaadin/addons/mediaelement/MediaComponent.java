@@ -14,7 +14,6 @@ import com.vaadin.ui.AbstractJavaScriptComponent;
 import com.vaadin.ui.JavaScriptFunction;
 import com.vaadin.ui.UI;
 
-
 @JavaScript({"vaadin://addons/js/media-element/jquery.js", "vaadin://addons/js/media-element/mediaelement-and-player.min.js", 
 	"vaadin://addons/js/mejslibrary.js", "vaadin://addons/js/mediacomponent-connector.js"})
 @StyleSheet("vaadin://addons/js/media-element/mediaelementplayer.min.css")
@@ -45,11 +44,11 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 
 
 	public MediaComponent(MediaComponent.Type playerType) {
-		init(playerType, getDefaultOptions(), true, false);
+		init(playerType, getDefaultOptions(), true, true);
 	}
 	
 	public MediaComponent(MediaComponent.Type playerType, MediaComponentOptions options) {
-		init(playerType, options, true, false);
+		init(playerType, options, true, true);
 	}
 	
 	private void init(MediaComponent.Type playerType, MediaComponentOptions options, boolean flashFallback, 
@@ -63,6 +62,27 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		getState().mejsUid = "mejsplayer-" + getUid();
 		getState().silverlightFallbackEnabled = silverlightFallback;
 		getState().flashFallbackEnabled = flashFallback;
+		
+		// Connector function to updated shared state from the client side
+		addFunction("updateSharedState", new JavaScriptFunction() {
+			private static final long serialVersionUID = 5490315638431042879L;
+
+			@Override
+			public void call(JSONArray arguments) throws JSONException {
+				try {
+					getState().paused = arguments.getBoolean(0);
+					getState().ended = arguments.getBoolean(1);
+					getState().seeking = arguments.getBoolean(2);
+					getState().duration = arguments.getInt(3);
+					getState().muted = arguments.getBoolean(4);
+					getState().volume = arguments.getInt(5);
+					getState().currentTime = arguments.getInt(6);
+				} catch (JSONException e) {
+					// Ignore
+				}
+			}
+		});
+		
 		callFunction("initPlayer", new Object[]{});
 	}
 	
@@ -117,7 +137,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	}
 	
 	public MediaComponentOptions getOptions() {
-		return getState().options;
+		return (MediaComponentOptions) getState().options;
 	}
 	
 	public void setOptions(MediaComponentOptions options) {
@@ -167,10 +187,16 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		callFunction("mute", new Object[]{});
 	}
 	
+	public void unmute() {
+		callFunction("unmute", new Object[]{});
+	}
+	
 	// must be from 1 to 10
 	public void setVolume(int volume) {
-		if (volume >= 0 && volume <= 10)
-			callFunction("setVolume", new Object[]{ volume/10 });
+		if (volume < 0 || volume > 10) throw new IllegalArgumentException("Volume must be between 1 and 10");
+		
+		callFunction("setVolume", new Object[]{ (float) volume / 10 });
+		System.out.println("(float) volume / 10 = " + ((float) volume / 10));
 	}
 	
 	public void setCurrentTime(int time) {
@@ -204,7 +230,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	
 	public int getVolume() {
 		updateState();
-		return getState().volume * 10;
+		return (int) (getState().volume * 10);
 	}
 	
 	public int getCurrentTime() {

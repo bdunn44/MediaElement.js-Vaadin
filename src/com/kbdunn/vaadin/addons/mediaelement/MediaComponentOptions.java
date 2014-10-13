@@ -1,40 +1,46 @@
 package com.kbdunn.vaadin.addons.mediaelement;
 
 import java.io.Serializable;
+import java.util.HashMap;
 
-public class MediaComponentOptions implements Serializable {
-	
-	private static final long serialVersionUID = 1L;
+public class MediaComponentOptions extends HashMap<String, Object> implements Serializable {
 
+	private static final long serialVersionUID = 4890420937049396766L;
 	// MediaElementJS options
-	//private int defaultVideoWidth;
-	//private int defaultVideoHeight;
-	private int videoWidth;
-	private int videoHeight;
-	private int audioWidth;
-	private int audioHeight;
-	private int startVolume;
-	private boolean loop;
-	private boolean enableAutosize;
+	//private Integer defaultVideoWidth;
+	//private Integer defaultVideoHeight;
+	/*private Integer videoWidth;
+	private Integer videoHeight;
+	private Integer audioWidth;
+	private Integer audioHeight;
+	private Integer startVolume;
+	private Boolean loop;
+	private Boolean enableAutosize;
 	private String[] features;
-	private boolean alwaysShowControls;
-	private boolean iPadUseNativeControls;
-	private boolean AndroidUseNativeControls; // Intentionally upper-case
-	private boolean alwaysShowHours;
-	private boolean showTimecodeFrameCount;
-	private int framesPerSecond;
-	private boolean enableKeyboard;
-	private boolean pauseOtherPlayers;
-	private String[] keyActions;
+	private Boolean alwaysShowControls;
+	private Boolean iPadUseNativeControls;
+	private Boolean AndroidUseNativeControls; // Intentionally upper-case
+	private Boolean alwaysShowHours;
+	private Boolean showTimecodeFrameCount;
+	private Integer framesPerSecond;
+	private Boolean enableKeyboard;
+	private Boolean pauseOtherPlayers;
+	private String[] keyActions;*/
 	
-	// List of valid values for the "features" array
-	public static final String PLAY_PAUSE_FEATURE = "playpause";
-	public static final String PROGRESS_FEATURE = "progress";
-	public static final String CURRENT_FEATURE = "current";
-	public static final String DURATION_FEATURE = "duration";
-	public static final String TRACKS_FEATURE = "tracks";
-	public static final String VOLUME_FEATURE = "volume";
-	public static final String FULLSCREEN_FEATURE = "fullscreen";
+	public enum Feature {
+		PLAYPAUSE("playpause"),
+		PROGRESS("progress"),
+		CURRENT("current"),
+		DURATION("duration"),
+		TRACKS("tracks"),
+		VOLUME("volume"),
+		FULLSCREEN("fullscreen");
+		
+		protected String value;
+		Feature(String value) {
+			this.value = value;
+		}
+	}
 	
 	public MediaComponentOptions() { }
 	
@@ -42,28 +48,28 @@ public class MediaComponentOptions implements Serializable {
 		MediaComponentOptions opts = new MediaComponentOptions();
 		opts.setAlwaysShowControls(true);
 		opts.setAlwaysShowHours(false);
-		opts.setAndroidUseNativeControls(false);
 		//opts.setAudioHeight(30);
 		//opts.setAudioWidth(300);
 		//opts.setVideoHeight(-1);
 		//opts.setVideoWidth(-1);
 		opts.setEnableAutosize(true);
-		opts.setEnableKeyboard(false);
-		opts.setFeatures(new String[] { 
-				MediaComponentOptions.PLAY_PAUSE_FEATURE, 
-				MediaComponentOptions.PROGRESS_FEATURE, 
-				MediaComponentOptions.CURRENT_FEATURE, 
-				MediaComponentOptions.DURATION_FEATURE,
-				MediaComponentOptions.VOLUME_FEATURE, 
-				MediaComponentOptions.FULLSCREEN_FEATURE });
-		opts.setiPadUseNativeControls(false);
+		//opts.setEnableKeyboard(false);
+		opts.setFeatures(new Feature[] { 
+				Feature.PLAYPAUSE, 
+				Feature.PROGRESS, 
+				Feature.CURRENT, 
+				Feature.DURATION,
+				Feature.VOLUME, 
+				Feature.FULLSCREEN });
+		//opts.setiPadUseNativeControls(true);
+		//opts.setAndroidUseNativeControls(true);
 		opts.setLoop(false);
 		opts.setPauseOtherPlayers(true);
-		opts.setStartVolume(8);
+		opts.setStartVolume(10);
 		return opts;
 	}
 	
-	/*public int getDefaultVideoWidth() {
+	/*public Integer getDefaultVideoWidth() {
 		return defaultVideoWidth;
 	}
 	
@@ -72,7 +78,7 @@ public class MediaComponentOptions implements Serializable {
 		
 	}
 	
-	public int getDefaultVideoHeight() {
+	public Integer getDefaultVideoHeight() {
 		return defaultVideoHeight;
 	}
 	
@@ -81,156 +87,157 @@ public class MediaComponentOptions implements Serializable {
 		
 	}*/
 	
-	public int getVideoWidth() {
-		return videoWidth;
+	public Integer getVideoWidth() {
+		if (get("videoWidth") == null) return null;
+		return (Integer) get("videoWidth");
 	}
 	
 	public void setVideoWidth(int videoWidth) {
-		this.videoWidth = videoWidth;
-		
+		put("videoWidth", videoWidth);
 	}
 	
-	public int getVideoHeight() {
-		return videoHeight;
+	public Integer getVideoHeight() {
+		if (get("videoHeight") == null) return null;
+		return (Integer) get("videoHeight");
 	}
 	
 	public void setVideoHeight(int videoHeight) {
-		this.videoHeight = videoHeight;
-		
+		put("videoHeight", videoHeight);
 	}
 	
-	public int getAudioWidth() {
-		return audioWidth;
+	public Integer getAudioWidth() {
+		if (get("audioWidth") == null) return null;
+		return (Integer) get("audioWidth");
 	}
 	
 	public void setAudioWidth(int audioWidth) {
-		this.audioWidth = audioWidth;
-		
+		put("audioWidth", audioWidth);
 	}
 	
-	public int getAudioHeight() {
-		return audioHeight;
+	public Integer getAudioHeight() {
+		if (get("audioHeight") == null) return null;
+		return (Integer) get("audioHeight");
 	}
 	
 	public void setAudioHeight(int audioHeight) {
-		this.audioHeight = audioHeight;
-		
+		put("audioHeight", audioHeight);
 	}
 	
-	public int getStartVolume() {
-		return startVolume;
+	public Integer getStartVolume() {
+		if (get("startVolume") == null) return null;
+		return (Integer) get("startVolume");
 	}
 	
 	public void setStartVolume(int startVolume) {
-		this.startVolume = startVolume;
-		
+		put("startVolume", startVolume);
 	}
 	
-	public boolean getLoop() {
-		return loop;
+	public Boolean getLoop() {
+		if (get("loop") == null) return null;
+		return (Boolean) get("loop");
 	}
 	
 	public void setLoop(boolean loop) {
-		this.loop = loop;
-		
+		put("loop", loop);
 	}
 	
-	public boolean getEnableAutosize() {
-		return enableAutosize;
+	public Boolean getEnableAutosize() {
+		if (get("enableAutosize") == null) return null;
+		return (Boolean) get("enableAutosize");
 	}
 	
 	public void setEnableAutosize(boolean enableAutosize) {
-		this.enableAutosize = enableAutosize;
-		
+		put("enableAutosize", enableAutosize);
 	}
 	
-	public String[] getFeatures() {
+	public Feature[] getFeatures() {
+		if (get("features") == null) return null;
+		
+		String[] set = (String[]) get("features)");
+		Feature[] features = new Feature[set.length];
+		for (int i = 0; i < set.length; i++)
+			features[i] = Feature.valueOf(set[i].toUpperCase());
+		
 		return features;
 	}
 	
-	public void setFeatures(String[] features) {
-		this.features = features;
+	public void setFeatures(Feature[] features) {
+		String[] f = new String[features.length];
+		for (int i = 0; i < features.length; i++)
+			f[i] = features[i].value;
 		
+		put("features", f);
 	}
 	
-	public boolean getAlwaysShowControls() {
-		return alwaysShowControls;
+	public Boolean getAlwaysShowControls() {
+		if (get("alwaysShowControls") == null) return null;
+		return (Boolean) get("alwaysShowControls");
 	}
 	
 	public void setAlwaysShowControls(boolean alwaysShowControls) {
-		this.alwaysShowControls = alwaysShowControls;
-		
+		put("alwaysShowControls", alwaysShowControls);
 	}
 	
-	public boolean getiPadUseNativeControls() {
-		return iPadUseNativeControls;
+	public Boolean getiPadUseNativeControls() {
+		if (get("iPadUseNativeControls") == null) return null;
+		return (Boolean) get("iPadUseNativeControls");
 	}
 	
 	public void setiPadUseNativeControls(boolean iPadUseNativeControls) {
-		this.iPadUseNativeControls = iPadUseNativeControls;
-		
+		put("iPadUseNativeControls", iPadUseNativeControls);
 	}
 	
-	public boolean getAndroidUseNativeControls() {
-		return AndroidUseNativeControls;
+	public Boolean getAndroidUseNativeControls() {
+		if (get("androidUseNativeControls") == null) return null;
+		return (Boolean) get("androidUseNativeControls");
 	}
 	
 	public void setAndroidUseNativeControls(boolean androidUseNativeControls) {
-		AndroidUseNativeControls = androidUseNativeControls;
-		
+		put("androidUseNativeControls", androidUseNativeControls);
 	}
 	
-	public boolean getAlwaysShowHours() {
-		return alwaysShowHours;
+	public Boolean getAlwaysShowHours() {
+		if (get("alwaysShowHours") == null) return null;
+		return (Boolean) get("alwaysShowHours");
 	}
 	
 	public void setAlwaysShowHours(boolean alwaysShowHours) {
-		this.alwaysShowHours = alwaysShowHours;
-		
+		put("alwaysShowHours", alwaysShowHours);
 	}
 	
-	public boolean getShowTimecodeFrameCount() {
-		return showTimecodeFrameCount;
+	public Boolean getShowTimecodeFrameCount() {
+		if (get("showTimecodeFrameCount") == null) return null;
+		return (Boolean) get("showTimecodeFrameCount");
 	}
 	
 	public void setShowTimecodeFrameCount(boolean showTimecodeFrameCount) {
-		this.showTimecodeFrameCount = showTimecodeFrameCount;
-		
+		put("showTimecodeFrameCount", showTimecodeFrameCount);
 	}
 	
-	public int getFramesPerSecond() {
-		return framesPerSecond;
+	public Integer getFramesPerSecond() {
+		if (get("framesPerSecond") == null) return null;
+		return (Integer) get("framesPerSecond");
 	}
 	
 	public void setFramesPerSecond(int framesPerSecond) {
-		this.framesPerSecond = framesPerSecond;
-		
+		put("framesPerSecond", framesPerSecond);
 	}
 	
-	public boolean getEnableKeyboard() {
-		return enableKeyboard;
+	public Boolean getEnableKeyboard() {
+		if (get("enableKeyboard") == null) return null;
+		return (Boolean) get("enableKeyboard");
 	}
 	
 	public void setEnableKeyboard(boolean enableKeyboard) {
-		this.enableKeyboard = enableKeyboard;
-		
+		put("enableKeyboard", enableKeyboard);
 	}
 	
-	public boolean getPauseOtherPlayers() {
-		return pauseOtherPlayers;
+	public Boolean getPauseOtherPlayers() {
+		if (get("pauseOtherPlayers") == null) return null;
+		return (Boolean) get("pauseOtherPlayers");
 	}
 	
 	public void setPauseOtherPlayers(boolean pauseOtherPlayers) {
-		this.pauseOtherPlayers = pauseOtherPlayers;
-		
-	}
-	
-	public String[] getKeyActions() {
-		return keyActions;
-	}
-	
-	public void setKeyActions(String[] keyActions) {
-		this.keyActions = keyActions;
-		
+		put("pauseOtherPlayers", pauseOtherPlayers);
 	}
 }

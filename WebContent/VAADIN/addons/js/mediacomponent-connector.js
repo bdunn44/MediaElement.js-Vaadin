@@ -1,7 +1,9 @@
+// Version 1.2.0
+
 com_kbdunn_vaadin_addons_mediaelement_MediaComponent = function () {
 	
 	// Debugger 
-	var debugMode = false;
+	var debugMode = true;
 	this.dumpState = function () {
 		console.log("Dumping shared state information....");
 		console.log("Player Type: " + this.getState().playerType);
@@ -13,6 +15,8 @@ com_kbdunn_vaadin_addons_mediaelement_MediaComponent = function () {
 		for (var opt in opts) {
 			console.log("  " + opt + ": " + opts[opt]);
 		};
+		
+		this.getState().options.enablePluginDebug = true;
 		
 		console.log("Sources:");
 		if (this.getState().sources) {
@@ -40,10 +44,7 @@ com_kbdunn_vaadin_addons_mediaelement_MediaComponent = function () {
 		console.log("  Seeked: " + this.getState().seekedRpc);
 		console.log("  Volume Change: " + this.getState().volumeChangeRpc);
 		console.log("  Loaded Data: " + this.getState().loadedDataRpc);
-
 	};
-	
-	//if (debugMode === true) { this.dumpState(); };
 	
 	var connector = this;
 	// Build additional options objects
@@ -74,6 +75,7 @@ com_kbdunn_vaadin_addons_mediaelement_MediaComponent = function () {
 		if (debugMode === true) { this.dumpState(); };
 		if (this.mediaComponent) { delete this.mediaComponent; console.log("mediaComponent deleted"); };
 		this.mediaComponent = new mejslibrary.MediaComponent(this.getElement(), this.getState().options, new this.mcOptions, new this.rpcOptions);
+		//this.updateListeners();
 		this.updateSource();
 	};
 	
@@ -99,14 +101,22 @@ com_kbdunn_vaadin_addons_mediaelement_MediaComponent = function () {
 	
 	// Update shared state with player state
 	this.updateState = function () {
-		var playerState = new this.mediaComponent.playerState();
-		this.getState().paused = playerState.paused;
-		this.getState().ended = playerState.ended;
-		this.getState().seeking = playerState.seeking;
-		this.getState().duration = playerState.duration;
-		this.getState().muted = playerState.muted;
-		this.getState().volume = playerState.volume;
-		this.getState().currentTime = playerState.currentTime;
+		var playerState = this.mediaComponent.getState();
+		//var sharedState = this.getState();
+		connector.updateSharedState(playerState.paused, 
+				playerState.ended, 
+				playerState.seeking, 
+				playerState.duration, 
+				playerState.muted, 
+				playerState.volume, 
+				playerState.currentTime);
+		/*sharedState.paused = playerState.paused;
+		sharedState.ended = playerState.ended;
+		sharedState.seeking = playerState.seeking;
+		sharedState.duration = playerState.duration;
+		sharedState.muted = playerState.muted;
+		sharedState.volume = playerState.volume;
+		sharedState.currentTime = playerState.currentTime;*/
 	};
 	
 	// RPC calls from server
@@ -118,6 +128,9 @@ com_kbdunn_vaadin_addons_mediaelement_MediaComponent = function () {
 	};
 	this.mute = function () {
 		this.mediaComponent.mute();
+	};
+	this.unmute = function () {
+		this.mediaComponent.unmute();
 	};
 	this.setVolume = function (volume) {
 		this.mediaComponent.setVolume(volume);
