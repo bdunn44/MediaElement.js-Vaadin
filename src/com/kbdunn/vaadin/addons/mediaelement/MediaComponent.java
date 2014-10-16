@@ -20,7 +20,8 @@ import com.vaadin.ui.UI;
 public class MediaComponent extends AbstractJavaScriptComponent implements Serializable {
 	
 	private static final long serialVersionUID = 434066435674155085L;
-	private static int componentUid = 0;
+	private static int globalUidCounter = 0;
+	private static boolean callInitRpc = true;
 	
 	public enum Type {
 		AUDIO("audio"), VIDEO("video");
@@ -42,7 +43,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	private ArrayList<VolumeChangedListener> volumeChangeListeners = new ArrayList<VolumeChangedListener>();
 	private ArrayList<LoadedDataListener> loadedDataListeners = new ArrayList<LoadedDataListener>();
 
-
+	
 	public MediaComponent(MediaComponent.Type playerType) {
 		init(playerType, getDefaultOptions(), true, true);
 	}
@@ -75,15 +76,13 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 					getState().seeking = arguments.getBoolean(2);
 					getState().duration = arguments.getInt(3);
 					getState().muted = arguments.getBoolean(4);
-					getState().volume = arguments.getInt(5);
+					getState().volume = (float) arguments.getDouble(5);
 					getState().currentTime = arguments.getInt(6);
 				} catch (JSONException e) {
 					// Ignore
 				}
 			}
 		});
-		
-		callFunction("initPlayer", new Object[]{});
 	}
 	
 	// NPE when setting source to a file resource - UI was not found correctly
@@ -92,12 +91,22 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		return UI.getCurrent();
 	}
 	
+	// This is used to call the initPlayer function only once per response, if required
+	@Override
+	public void beforeClientResponse(boolean initial) {
+		if (initial || callInitRpc) {
+			callFunction("initPlayer", new Object[]{});
+			callInitRpc = false;
+		}
+		super.beforeClientResponse(initial);
+	}
+	
 	public static MediaComponentOptions getDefaultOptions() {
 		return MediaComponentOptions.getDefaultOptions();
 	}
 	
 	private static synchronized int getUid() {
-		return componentUid++;
+		return ++globalUidCounter;
 	}
 	
 	public Resource getSource() {
@@ -110,14 +119,14 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		
 		getState().sources = new ArrayList<MediaSource>();
 		getState().sources.add(createMediaResource(source, "0"));
-		callFunction("initPlayer", new Object[]{});	
+		callInitRpc = true;
 	}
 	
 	/*public void addSource(Resource source) {
 		if (getState().sources == null) setSource(source);
 		String key = String.valueOf(getState().sources.size() - 1);
 		getState().sources.add(createMediaResource(source, key));
-		callFunction("initPlayer", new Object[]{});	
+		callInitRpc = true;	
 	}*/
 	/*
 	private void alignPlayerType(Resource source) {
@@ -142,6 +151,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	
 	public void setOptions(MediaComponentOptions options) {
 		getState().options = options;
+		callInitRpc = true;
 	}
 	
 	public String getPlayerType() {
@@ -158,7 +168,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	
 	public void setFlashFallbackEnabled(boolean enabled) {
 		getState().flashFallbackEnabled = enabled;
-		callFunction("initPlayer", new Object[]{});
+		callInitRpc = true;
 	}
 	
 	public boolean silverlightFallbackEnabled() {
@@ -167,7 +177,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	
 	public void setSilverlightFallbackEnabled(boolean enabled) {
 		getState().silverlightFallbackEnabled = enabled;
-		callFunction("initPlayer", new Object[]{});
+		callInitRpc = true;
 	}
 	
 	public void play() {
@@ -194,9 +204,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	// must be from 1 to 10
 	public void setVolume(int volume) {
 		if (volume < 0 || volume > 10) throw new IllegalArgumentException("Volume must be between 1 and 10");
-		
 		callFunction("setVolume", new Object[]{ (float) volume / 10 });
-		System.out.println("(float) volume / 10 = " + ((float) volume / 10));
 	}
 	
 	public void setCurrentTime(int time) {
@@ -347,7 +355,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		playbackEndedListeners.add(listener);
 		if (!getState().playbackEndedRpc) {
 			getState().playbackEndedRpc = true;
-			callFunction("initPlayer", new Object[]{});
+			callInitRpc = true;
 		}
 	}
 	
@@ -355,7 +363,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		canPlayListeners.add(listener);
 		if (!getState().canPlayRpc) { 
 			getState().canPlayRpc = true;
-			callFunction("initPlayer", new Object[]{});
+			callInitRpc = true;
 		}
 	}
 	
@@ -363,7 +371,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		loadedMetadataListeners.add(listener);
 		if (!getState().loadedMetadataRpc) {
 			getState().loadedMetadataRpc = true;
-			callFunction("initPlayer", new Object[]{});
+			callInitRpc = true;
 		}
 	}
 	
@@ -371,7 +379,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		pauseListeners.add(listener);
 		if (!getState().pauseRpc) {
 			getState().pauseRpc = true;
-			callFunction("initPlayer", new Object[]{});
+			callInitRpc = true;
 		}
 	}
 	
@@ -379,7 +387,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		playingListeners.add(listener);
 		if (!getState().playingRpc) {
 			getState().playingRpc = true;
-			callFunction("initPlayer", new Object[]{});
+			callInitRpc = true;
 		}
 	}
 
@@ -387,7 +395,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		playListeners.add(listener);
 		if (!getState().playRpc) {
 			getState().playRpc = true;
-			callFunction("initPlayer", new Object[]{});
+			callInitRpc = true;
 		}
 	}
 	
@@ -395,7 +403,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		seekedListeners.add(listener);
 		if (!getState().seekedRpc) {
 			getState().seekedRpc = true;
-			callFunction("initPlayer", new Object[]{});
+			callInitRpc = true;
 		}
 	}
 	
@@ -403,7 +411,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		volumeChangeListeners.add(listener);
 		if (!getState().volumeChangeRpc) {
 			getState().volumeChangeRpc = true;
-			callFunction("initPlayer", new Object[]{});
+			callInitRpc = true;
 		}
 	}
 	
@@ -411,7 +419,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		loadedDataListeners.add(listener);
 		if (!getState().loadedDataRpc) {
 			getState().loadedDataRpc = true;
-			callFunction("initPlayer", new Object[]{});
+			callInitRpc = true;
 		}
 	}
 }

@@ -6,26 +6,6 @@ import java.util.HashMap;
 public class MediaComponentOptions extends HashMap<String, Object> implements Serializable {
 
 	private static final long serialVersionUID = 4890420937049396766L;
-	// MediaElementJS options
-	//private Integer defaultVideoWidth;
-	//private Integer defaultVideoHeight;
-	/*private Integer videoWidth;
-	private Integer videoHeight;
-	private Integer audioWidth;
-	private Integer audioHeight;
-	private Integer startVolume;
-	private Boolean loop;
-	private Boolean enableAutosize;
-	private String[] features;
-	private Boolean alwaysShowControls;
-	private Boolean iPadUseNativeControls;
-	private Boolean AndroidUseNativeControls; // Intentionally upper-case
-	private Boolean alwaysShowHours;
-	private Boolean showTimecodeFrameCount;
-	private Integer framesPerSecond;
-	private Boolean enableKeyboard;
-	private Boolean pauseOtherPlayers;
-	private String[] keyActions;*/
 	
 	public enum Feature {
 		PLAYPAUSE("playpause"),
@@ -52,7 +32,7 @@ public class MediaComponentOptions extends HashMap<String, Object> implements Se
 		//opts.setAudioWidth(300);
 		//opts.setVideoHeight(-1);
 		//opts.setVideoWidth(-1);
-		opts.setEnableAutosize(true);
+		//opts.setEnableAutosize(true);
 		//opts.setEnableKeyboard(false);
 		opts.setFeatures(new Feature[] { 
 				Feature.PLAYPAUSE, 
@@ -61,8 +41,8 @@ public class MediaComponentOptions extends HashMap<String, Object> implements Se
 				Feature.DURATION,
 				Feature.VOLUME, 
 				Feature.FULLSCREEN });
-		//opts.setiPadUseNativeControls(true);
-		//opts.setAndroidUseNativeControls(true);
+		opts.setiPadUseNativeControls(true);
+		opts.setAndroidUseNativeControls(true);
 		opts.setLoop(false);
 		opts.setPauseOtherPlayers(true);
 		opts.setStartVolume(10);

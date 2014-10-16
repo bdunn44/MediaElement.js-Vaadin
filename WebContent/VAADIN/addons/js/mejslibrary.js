@@ -1,4 +1,4 @@
-// Version 1.2.0
+// Version 1.2.1
 
 // Define the namespace
 var mejslibrary = mejslibrary || {};
@@ -27,24 +27,19 @@ mejslibrary.MediaComponent = function (element, mejsOptions, mcOptions, rpcOptio
 		return playerState;
 	};
 	
-	var mejsid = mcOptions.mejsUid;
-	
-	var videoElement = 
-		'<video id="' + mejsid  + '" controls="controls" preload="none">' +
-			'<source type="video/mp4" src="nothing" />' +
-		'</video>';
-	var audioElement = 
-		'<audio id="' + mejsid + '" controls="controls" preload="none">' +
-			'<source type="audio/mp3" src="nothing" />' +
-		'</audio>';
+	//var mejsid = mcOptions.mejsUid;
 	
 	// Create the HTML5 audio or video element
 	if (mcOptions.playerType == "audio") {
 		console.log("Creating an Audio player");
-		element.innerHTML = audioElement;
+		element.innerHTML = '<audio id="' + mcOptions.mejsUid + '" controls="controls" preload="none">'
+					+ '<source type="audio/mp3" src="nothing" />'
+					+ '</audio>';
 	} else if (mcOptions.playerType == "video") {
 		console.log("Creating a Video player");
-		element.innerHTML = videoElement;
+		element.innerHTML = '<video id="' + mcOptions.mejsUid  + '" controls="controls" preload="none">'
+					+ '<source type="video/mp4" src="nothing" />'
+					+ '</video>';
 	};
 	
 	var flashFallback = 
@@ -60,18 +55,18 @@ mejslibrary.MediaComponent = function (element, mejsOptions, mcOptions, rpcOptio
 	
 	// Enable Flash and/or Silverlight fallback
 	if (mcOptions.flash == true && mcOptions.silverlight == true) {
-		$("#" + mejsid).append(flashFallback);
-		$("#" + mejsid).append(silverlightFallback);
+		$("#" + mcOptions.mejsUid).append(flashFallback);
+		$("#" + mcOptions.mejsUid).append(silverlightFallback);
 		mejsOptions.plugins = ["flash", "silverlight"];
 	}
 	else if (mcOptions.flash == true) {
 		console.log("Adding Flash fallback");
-		$("#" + mejsid).append(flashFallback);
+		$("#" + mcOptions.mejsUid).append(flashFallback);
 		mejsOptions.plugins = ["flash"];
 	}
 	else if (mcOptions.silverlight == true) {
 		console.log("Adding Silverlight fallback");
-		$("#" + mejsid).append(silverlightFallback);
+		$("#" + mcOptions.mejsUid).append(silverlightFallback);
 		mejsOptions.plugins = ["silverlight"];
 	};
 	
@@ -102,45 +97,15 @@ mejslibrary.MediaComponent = function (element, mejsOptions, mcOptions, rpcOptio
     };
     
 	// Create the MEJS player
-	var mejsplayer = new MediaElementPlayer($("#" + mejsid), mejsOptions);
+	var mejsplayer = new MediaElementPlayer($("#" + mcOptions.mejsUid), mejsOptions);
 	
 	// Sets a new source
 	this.setSource = function (sources) {
-		console.log("Setting source to " + sources[0].src + " for mejs id #" + mejsid);
+		console.log("Setting player source (ID " + mcOptions.mejsUid + ") to " + sources[0].src);
 		mejsplayer.setSrc(sources[0].src);
-		$("#" + mejsid + " object param[name='flashvars']").attr("value", "controls=true&amp;file=" + sources[0].src);
+		$("#" + mcOptions.mejsUid + " object param[name='flashvars']").attr("value", "controls=true&amp;file=" + sources[0].src);
 		mejsplayer.load();
 	};
-	
-	// Keep track of added event listeners
-	/*var addedListeners = {};
-	function addEventListener(eventType, func) {
-		if (addedListeners[eventType]) return;
-		console.log("Adding listener " + eventType);
-		addedListeners[eventType] = func;
-		$("#" + mejsid).bind(eventType, func);
-		//mejsplayer.addEventListener(eventType, func, false);
-	}*/
-	
-	// Only add event listeners that have been enabled
-	/*this.refreshListeners = function(rpcOptions) {
-		console.log("Refreshing Listeners...");
-		if (rpcOptions.playbackEndedRpc == true) { addEventListener('ended', ended); };
-		if (rpcOptions.canPlayRpc == true) { addEventListener('canplay', canplay); };
-		if (rpcOptions.loadedMetadataRpc == true) { addEventListener('loadedmetadata', loadedmetadata); };
-		if (rpcOptions.pauseRpc == true) { addEventListener('pause', pause); };
-		if (rpcOptions.playingRpc == true) { addEventListener('playing', playing); };
-		if (rpcOptions.playRpc == true) { addEventListener('play', play); };
-		if (rpcOptions.seekedRpc == true) { addEventListener('seeked', seeked); };
-		if (rpcOptions.volumeChangeRpc == true) { addEventListener('volumechange', volumechange); };
-		if (rpcOptions.loadedDataRpc == true) { addEventListener('loadeddata', loadeddata); };
-	};*/
-	
-	// Testing currenttime - WORKING
-	/*setInterval(outTime, 1000);
-	function outTime() {
-		console.log(playerState.currentTime);
-	};*/
 	
 	// RPC calls from server
 	this.play = function () {
