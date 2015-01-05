@@ -28,6 +28,7 @@ local.properties
 # PDT-specific
 .buildpath
 
+WebContent/WEB-INF/
 
 #################
 ## Visual Studio

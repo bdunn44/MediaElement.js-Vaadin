@@ -119,7 +119,8 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		
 		getState().sources = new ArrayList<MediaSource>();
 		getState().sources.add(createMediaResource(source, "0"));
-		callInitRpc = true;
+		//callInitRpc = true;
+		callFunction("initPlayer", new Object[]{});
 	}
 	
 	/*public void addSource(Resource source) {

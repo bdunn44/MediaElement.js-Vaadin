@@ -86,6 +86,9 @@ com_kbdunn_vaadin_addons_mediaelement_MediaComponent = function () {
 			if (sources[i].src.indexOf("app://") === 0) {
 				sources[i].src = document.location.origin + document.location.pathname +
 				sources[i].src.replace("app://", "");
+			} else if (sources[i].src.indexOf("theme://") === 0) {
+				sources[i].src = document.location.origin + document.location.pathname +
+				sources[i].src.replace("theme://", "VAADIN/");
 			};
 			console.log("Adding source '" + sources[i].src + " (" + sources[i].type + ")'");
 		};
