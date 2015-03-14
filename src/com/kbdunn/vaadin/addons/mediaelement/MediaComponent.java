@@ -12,16 +12,14 @@ import com.vaadin.server.Resource;
 import com.vaadin.server.ResourceReference;
 import com.vaadin.ui.AbstractJavaScriptComponent;
 import com.vaadin.ui.JavaScriptFunction;
-import com.vaadin.ui.UI;
 
-@JavaScript({"vaadin://addons/js/media-element/jquery.js", "vaadin://addons/js/media-element/mediaelement-and-player.min.js", 
-	"vaadin://addons/js/mejslibrary.js", "vaadin://addons/js/mediacomponent-connector.js"})
-@StyleSheet("vaadin://addons/js/media-element/mediaelementplayer.min.css")
+@JavaScript({"vaadin://addons/mejs-player/mediaelement-2.16.4/jquery.js", "vaadin://addons/mejs-player/mediaelement-2.16.4/mediaelement-and-player.min.js", 
+	"vaadin://addons/mejs-player/mejs-player.js", "vaadin://addons/mejs-player/mejs-player-connector.js"})
+@StyleSheet("vaadin://addons/mejs-player/mediaelement-2.16.4/mediaelementplayer.min.css")
 public class MediaComponent extends AbstractJavaScriptComponent implements Serializable {
 	
 	private static final long serialVersionUID = 434066435674155085L;
 	private static int globalUidCounter = 0;
-	private static boolean callInitRpc = true;
 	
 	public enum Type {
 		AUDIO("audio"), VIDEO("video");
@@ -42,7 +40,8 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	private ArrayList<SeekedListener> seekedListeners = new ArrayList<SeekedListener>();
 	private ArrayList<VolumeChangedListener> volumeChangeListeners = new ArrayList<VolumeChangedListener>();
 	private ArrayList<LoadedDataListener> loadedDataListeners = new ArrayList<LoadedDataListener>();
-
+	
+	private boolean callInitRpc;
 	
 	public MediaComponent(MediaComponent.Type playerType) {
 		init(playerType, getDefaultOptions(), true, true);
@@ -52,22 +51,21 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		init(playerType, options, true, true);
 	}
 	
-	private void init(MediaComponent.Type playerType, MediaComponentOptions options, boolean flashFallback, 
-			boolean silverlightFallback) {
+	private void init(MediaComponent.Type playerType, MediaComponentOptions options, boolean flashFallback, boolean silverlightFallback) {
+		if (playerType == null) throw new IllegalArgumentException("Player Type cannot be null");
+		if (options == null) throw new IllegalArgumentException("Player Options cannot be null");
 		
-		if (playerType == Type.AUDIO || playerType == Type.VIDEO)
-			setPlayerType(playerType);
-		
+		setPlayerType(playerType);
 		addRpcFunctions();
 		setOptions(options);
-		getState().mejsUid = "mejsplayer-" + getUid();
+		getState().uid = "mejsplayer-" + getUid();
 		getState().silverlightFallbackEnabled = silverlightFallback;
 		getState().flashFallbackEnabled = flashFallback;
 		
 		// Connector function to updated shared state from the client side
 		addFunction("updateSharedState", new JavaScriptFunction() {
 			private static final long serialVersionUID = 5490315638431042879L;
-
+			
 			@Override
 			public void call(JSONArray arguments) throws JSONException {
 				try {
@@ -85,13 +83,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		});
 	}
 	
-	// NPE when setting source to a file resource - UI was not found correctly
-	@Override
-	public UI getUI() {
-		return UI.getCurrent();
-	}
-	
-	// This is used to call the initPlayer function only once per response, if required
+	// Call the initPlayer function only once per response, if required
 	@Override
 	public void beforeClientResponse(boolean initial) {
 		if (initial || callInitRpc) {
@@ -115,31 +107,13 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	
 	public void setSource(Resource source) {
 		if (!source.getMIMEType().startsWith("audio") && !source.getMIMEType().startsWith("video")) 
-			return;
+			throw new IllegalArgumentException("The resource MIME type must be audio or video");
 		
-		getState().sources = new ArrayList<MediaSource>();
-		getState().sources.add(createMediaResource(source, "0"));
+		getState().source = createMediaResource(source, "0");
 		//callInitRpc = true;
-		callFunction("initPlayer", new Object[]{});
+		callFunction("updateSource", new Object[]{});
 	}
 	
-	/*public void addSource(Resource source) {
-		if (getState().sources == null) setSource(source);
-		String key = String.valueOf(getState().sources.size() - 1);
-		getState().sources.add(createMediaResource(source, key));
-		callInitRpc = true;	
-	}*/
-	/*
-	private void alignPlayerType(Resource source) {
-		if (!source.getMIMEType().startsWith(getState().playerType)) {
-			if (getState().playerType.equals(AUDIO_PLAYER)) {
-				getState().playerType = VIDEO_PLAYER;
-			} else {
-				getState().playerType = AUDIO_PLAYER;
-			}
-		}
-	}
-	*/
 	private MediaSource createMediaResource(Resource source, String key) {
 		setResource(key, source);
 		return new MediaSource(
@@ -186,11 +160,6 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	}
 	
 	public void pause() {
-		callFunction("pause", new Object[]{});
-	}
-	
-	public void stop() {
-		getState().sources = null;
 		callFunction("pause", new Object[]{});
 	}
 	

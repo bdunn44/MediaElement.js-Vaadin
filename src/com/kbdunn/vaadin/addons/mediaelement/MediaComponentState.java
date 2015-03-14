@@ -1,6 +1,5 @@
 package com.kbdunn.vaadin.addons.mediaelement;
 
-import java.util.List;
 import java.util.Map;
 
 import com.vaadin.shared.ui.JavaScriptComponentState;
@@ -9,7 +8,7 @@ public class MediaComponentState extends JavaScriptComponentState {
 	public static final long serialVersionUID = 1443920175588070872L;
 	
 	// Audio/Video sources
-	public List<MediaSource> sources; 
+	public MediaSource source; 
 	
 	// MediaElementJS options
 	//public MediaComponentOptions options;
@@ -19,7 +18,7 @@ public class MediaComponentState extends JavaScriptComponentState {
 	public String playerType;
 	
 	// ID of element
-	public String mejsUid;
+	public String uid;
 	
 	// Configure Flash and Silverlight fallback
 	public boolean flashFallbackEnabled;
