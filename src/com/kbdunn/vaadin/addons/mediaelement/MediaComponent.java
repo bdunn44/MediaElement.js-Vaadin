@@ -1,5 +1,6 @@
 package com.kbdunn.vaadin.addons.mediaelement;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 
@@ -8,8 +9,13 @@ import org.json.JSONException;
 
 import com.vaadin.annotations.JavaScript;
 import com.vaadin.annotations.StyleSheet;
+import com.vaadin.server.ExternalResource;
+import com.vaadin.server.FileResource;
 import com.vaadin.server.Resource;
 import com.vaadin.server.ResourceReference;
+import com.vaadin.server.ThemeResource;
+import com.vaadin.server.VaadinRequest;
+import com.vaadin.server.VaadinResponse;
 import com.vaadin.ui.AbstractJavaScriptComponent;
 import com.vaadin.ui.JavaScriptFunction;
 
@@ -19,7 +25,7 @@ import com.vaadin.ui.JavaScriptFunction;
 public class MediaComponent extends AbstractJavaScriptComponent implements Serializable {
 	
 	private static final long serialVersionUID = 434066435674155085L;
-	private static int globalUidCounter = 0;
+	private static int globalUid = 0;
 	
 	public enum Type {
 		AUDIO("audio"), VIDEO("video");
@@ -43,6 +49,12 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	
 	private boolean callInitRpc;
 	
+	/*
+	 * 
+	 * Constructors
+	 * 
+	 */
+	
 	public MediaComponent(MediaComponent.Type playerType) {
 		init(playerType, getDefaultOptions(), true, true);
 	}
@@ -52,8 +64,8 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	}
 	
 	private void init(MediaComponent.Type playerType, MediaComponentOptions options, boolean flashFallback, boolean silverlightFallback) {
-		if (playerType == null) throw new IllegalArgumentException("Player Type cannot be null");
-		if (options == null) throw new IllegalArgumentException("Player Options cannot be null");
+		if (playerType == null) throw new NullPointerException("Player Type cannot be null");
+		if (options == null) throw new NullPointerException("Player Options cannot be null");
 		
 		setPlayerType(playerType);
 		addRpcFunctions();
@@ -76,6 +88,7 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 					getState().muted = arguments.getBoolean(4);
 					getState().volume = (float) arguments.getDouble(5);
 					getState().currentTime = arguments.getInt(6);
+					getState().playerType = arguments.getString(7);
 				} catch (JSONException e) {
 					// Ignore
 				}
@@ -83,7 +96,19 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		});
 	}
 	
-	// Call the initPlayer function only once per response, if required
+	private static synchronized int getUid() {
+		return ++globalUid;
+	}
+	
+	/*
+	 * 
+	 * Overrides
+	 * 
+	 */
+	
+	// Initializes MediaElementPlayer object on client side
+	// This is only required if the player hasn't been initialized yet or player options have changed
+	// Call function only once per response, if required
 	@Override
 	public void beforeClientResponse(boolean initial) {
 		if (initial || callInitRpc) {
@@ -93,24 +118,51 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		super.beforeClientResponse(initial);
 	}
 	
-	public static MediaComponentOptions getDefaultOptions() {
-		return MediaComponentOptions.getDefaultOptions();
+	// Add Accept-Ranges: bytes to all responses to support seeking in non-IE browsers
+	// Catch IOException that is thrown when the player source has changed and the client aborts the previous connection
+	@Override
+	public boolean handleConnectorRequest(VaadinRequest request, VaadinResponse response, String path) throws IOException {
+		try {
+			System.out.println("path="+path);
+			if (path.startsWith("0")) {
+				System.out.println("Adding Accept-Ranges: bytes header");
+				response.setHeader("Accept-Ranges", "bytes"); 
+			}
+			return super.handleConnectorRequest(request, response, path);
+		} catch (IOException e) {
+			return true;
+		}
 	}
 	
-	private static synchronized int getUid() {
-		return ++globalUidCounter;
-	}
+	/*
+	 * 
+	 * Get/Set Source
+	 * 
+	 */
 	
 	public Resource getSource() {
 		return getResource("0");
 	}
 	
 	public void setSource(Resource source) {
-		if (!source.getMIMEType().startsWith("audio") && !source.getMIMEType().startsWith("video")) 
+		if (source == null) throw new NullPointerException("Source cannot be null");
+		
+		// Check if source is a File, Theme or External resource
+		if (!(source instanceof FileResource || source instanceof ThemeResource || source instanceof ExternalResource)) {
+			throw new UnsupportedOperationException("Only FileResource and ThemeResource resources are supported.");
+		}
+		// Check that MIME type for File or Theme resource is audio or video
+		if (!(source instanceof ExternalResource) 
+				&& !(source.getMIMEType().startsWith("audio") || source.getMIMEType().startsWith("video"))) {
 			throw new IllegalArgumentException("The resource MIME type must be audio or video");
+		}
+		// Check that the URL of an External resource points to YouTube
+		if (source instanceof ExternalResource 
+				&& !((ExternalResource) source).getURL().matches("(https?://)?(www\\.)?(youtube\\.com|youtu\\.be).*")) {
+			throw new IllegalArgumentException("Only YouTube external resources are allowed");
+		}
 		
 		getState().source = createMediaResource(source, "0");
-		//callInitRpc = true;
 		callFunction("updateSource", new Object[]{});
 	}
 	
@@ -118,6 +170,16 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		setResource(key, source);
 		return new MediaSource(
 				new ResourceReference(source, this, key).getURL(), source.getMIMEType());
+	}
+	
+	/*
+	 * 
+	 * Getters/Setters for Player Options
+	 * 
+	 */
+	
+	public static MediaComponentOptions getDefaultOptions() {
+		return MediaComponentOptions.getDefaultOptions();
 	}
 	
 	public MediaComponentOptions getOptions() {
@@ -129,16 +191,8 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		callInitRpc = true;
 	}
 	
-	public String getPlayerType() {
-		return getState().playerType;
-	}
-	
 	public void setPlayerType(MediaComponent.Type playerType) {
 		getState().playerType = playerType.value;
-	}
-	
-	public boolean flashFallbackEnabled() {
-		return getState().flashFallbackEnabled;
 	}
 	
 	public void setFlashFallbackEnabled(boolean enabled) {
@@ -146,14 +200,16 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 		callInitRpc = true;
 	}
 	
-	public boolean silverlightFallbackEnabled() {
-		return getState().silverlightFallbackEnabled;
-	}
-	
 	public void setSilverlightFallbackEnabled(boolean enabled) {
 		getState().silverlightFallbackEnabled = enabled;
 		callInitRpc = true;
 	}
+	
+	/*
+	 * 
+	 * Player controls - RPC calls
+	 * 
+	 */
 	
 	public void play() {
 		callFunction("play", new Object[]{});
@@ -179,6 +235,25 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	
 	public void setCurrentTime(int time) {
 		callFunction("setCurrentTime", new Object[]{ time });
+	}
+	
+	/*
+	 * 
+	 * Getters for player state attributes
+	 * 
+	 */
+	
+	public Type getPlayerType() {
+		updateState();
+		return Type.valueOf(getState().playerType);
+	}
+	
+	public boolean flashFallbackEnabled() {
+		return getState().flashFallbackEnabled;
+	}
+	
+	public boolean silverlightFallbackEnabled() {
+		return getState().silverlightFallbackEnabled;
 	}
 	
 	public boolean isPaused() {
@@ -220,10 +295,16 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	protected MediaComponentState getState() {
 		return (MediaComponentState) super.getState();
 	}
-
+	
 	private void updateState() {
 		callFunction("updateState", new Object[]{});
 	}
+	
+	/*
+	 * 
+	 * RPC Functions
+	 * 
+	 */
 	
 	private void addRpcFunctions() {
 		addFunction("notifyPlaybackEnded", new JavaScriptFunction() {
@@ -320,6 +401,12 @@ public class MediaComponent extends AbstractJavaScriptComponent implements Seria
 	private MediaComponent getMe() {
 		return this;
 	}
+	
+	/*
+	 * 
+	 * Event Listeners
+	 * 
+	 */
 	
 	public void addPlaybackEndedListener(PlaybackEndedListener listener) {
 		playbackEndedListeners.add(listener);

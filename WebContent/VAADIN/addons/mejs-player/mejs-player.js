@@ -7,80 +7,67 @@ mejsplayer.player = function (element, mejsOptions, mcOptions, rpcOptions) {
 	
 	var 
 		t = this,
-		d = mejsOptions.enablePluginDebug == true;
+		d = mejsOptions.enablePluginDebug === true;
 	
-	// Store MEJS player state
-	var playerState = {
-		paused: false,
-		ended: false,
-		seeking: false,
-		duration: 0,
-		muted: false,
-		volume: 10,
-		currentTime: 0
+	/* Create the HTML5 audio or video element */
+	function initialize(f) {
+		if (mcOptions.playerType === "audio") {
+			createAudio();
+		} else if (mcOptions.playerType === "video") {
+			createVideo();
+		}
+		if (f === true) addFallback();
 	}
 	
-	t.getState = function() {  
-		return playerState;
-	}
-	
-	// Create the HTML5 audio or video element
-	if (mcOptions.playerType == "audio") {
+	// Create audio/video HTML5 players
+	function createAudio() {
 		if (d) console.log("Creating an Audio player");
 		element.innerHTML = '<audio id="' + mcOptions.uid + '" controls="controls" preload="none">'
 					+ '<source type="audio/mp3" src="nothing" />'
 					+ '</audio>';
-	} else if (mcOptions.playerType == "video") {
+	}
+	
+	function createVideo() {
 		if (d) console.log("Creating a Video player");
 		element.innerHTML = '<video id="' + mcOptions.uid  + '" controls="controls" preload="none">'
 					+ '<source type="video/mp4" src="nothing" />'
 					+ '</video>';
 	}
 	
-	var flashFallback = 
-		'<object type="application/x-shockwave-flash" data="media-element/flashmediaelement.swf">' +
-			'<param name="movie" value="media-element/flashmediaelement.swf" />' +
-			'<param name="flashvars" value="controls=true&file=nothing" />' +
-		'</object>';
-	var silverlightFallback = 
-		'<object type="application/x-silverlight-2" data="media-element/silverlightmediaelement.xap">' +
-			'<param name="movie" value="media-element/silverlightmediaelement.xap" />' +
-			'<param name="flashvars" value="controls=true&file=nothing" />' +
-		'</object>';
-	
-	// Enable Flash and/or Silverlight fallback
-	if (mcOptions.flash == true && mcOptions.silverlight == true) {
-		if (d) console.log("Adding Flash and Silverlight fallback");
-		$("#" + mcOptions.uid).append(flashFallback);
-		$("#" + mcOptions.uid).append(silverlightFallback);
-		mejsOptions.plugins = ["flash", "silverlight"];
+	function addFallback() { 
+		var flashFallback = 
+			'<object type="application/x-shockwave-flash" data="media-element/flashmediaelement.swf">' +
+				'<param name="movie" value="media-element/flashmediaelement.swf" />' +
+				'<param name="flashvars" value="controls=true&file=nothing" />' +
+			'</object>';
+		var silverlightFallback = 
+			'<object type="application/x-silverlight-2" data="media-element/silverlightmediaelement.xap">' +
+				'<param name="movie" value="media-element/silverlightmediaelement.xap" />' +
+				'<param name="flashvars" value="controls=true&file=nothing" />' +
+			'</object>';
 		
-	} else if (mcOptions.flash == true) {
-		if (d) console.log("Adding Flash fallback");
-		$("#" + mcOptions.uid).append(flashFallback);
-		mejsOptions.plugins = ["flash"];
-		
-	} else if (mcOptions.silverlight == true) {
-		if (d) console.log("Adding Silverlight fallback");
-		$("#" + mcOptions.uid).append(silverlightFallback);
-		mejsOptions.plugins = ["silverlight"];
+		/* Enable Flash and/or Silverlight fallback */
+		if (mcOptions.flash == true && mcOptions.silverlight == true) {
+			if (d) console.log("Adding Flash and Silverlight fallback");
+			$("#" + mcOptions.uid).append(flashFallback);
+			$("#" + mcOptions.uid).append(silverlightFallback);
+			mejsOptions.plugins = ["flash", "silverlight"];
+			
+		} else if (mcOptions.flash == true) {
+			if (d) console.log("Adding Flash fallback");
+			$("#" + mcOptions.uid).append(flashFallback);
+			mejsOptions.plugins = ["flash"];
+			
+		} else if (mcOptions.silverlight == true) {
+			if (d) console.log("Adding Silverlight fallback");
+			$("#" + mcOptions.uid).append(silverlightFallback);
+			mejsOptions.plugins = ["silverlight"];
+		}
 	}
 	
 	mejsOptions.success = function (mediaElement, domObject) {
 		
-		// Add client-side listeners to update state
-		mediaElement.addEventListener('ended', function(e) { updateState(mediaElement); })
-		mediaElement.addEventListener('canplay', function(e) { updateState(mediaElement); })
-		mediaElement.addEventListener('loadedmetadata', function(e) { updateState(mediaElement); })
-		mediaElement.addEventListener('pause', function(e) { updateState(mediaElement); })
-		mediaElement.addEventListener('playing', function(e) { updateState(mediaElement); })
-		mediaElement.addEventListener('play', function(e) { updateState(mediaElement); })
-		mediaElement.addEventListener('seeked', function(e) { updateState(mediaElement); })
-		mediaElement.addEventListener('volumechange', function(e) { updateState(mediaElement); })
-		mediaElement.addEventListener('loadeddata', function(e) { updateState(mediaElement); })
-		mediaElement.addEventListener('timeupdate', function(e) { updateState(mediaElement); })
-		
-        // Add RPC event listeners
+        /* Add RPC event listeners */
 		if (rpcOptions.playbackEndedRpc) { mediaElement.addEventListener('ended', ended, false); }
 		if (rpcOptions.canPlayRpc) { mediaElement.addEventListener('canplay', canplay, false); }
 		if (rpcOptions.loadedMetadataRpc) { mediaElement.addEventListener('loadedmetadata', loadedmetadata, false); }
@@ -92,21 +79,47 @@ mejsplayer.player = function (element, mejsOptions, mcOptions, rpcOptions) {
 		if (rpcOptions.loadedDataRpc) { mediaElement.addEventListener('loadeddata', loadeddata, false); }
     };
     
-	// Create the MEJS player
+	/* Create MEJS player */
+    initialize(true);
 	var mejsplayer = new MediaElementPlayer($("#" + mcOptions.uid), mejsOptions);
 	
-	// Sets a new source
+	/* Set player source */
 	t.setSource = function(source) {
-		if (d) console.log("Setting mejs-player #" + mcOptions.uid + " source to " + source.src + "(" + source.type + ")");
-		mejsplayer.setSrc(source.src);
-		$("#" + mcOptions.uid + " object param[name='flashvars']").attr("value", "controls=true&amp;file=" + source.src);
-		//$('#' + mcOptions.uid).append('<source type="' + source.type + '" src="' + source.src + '"/>');
-		//$("#" + mcOptions.uid + " source").attr("type", source.src);
-		//$("#" + mcOptions.uid + " source").attr("src", source.type);
+		mejsplayer.pause();
+		
+		var el = $("#" + mcOptions.uid);
+		var ex = source.type === "video/youtube";// || source.type === "video/vimeo";
+		var tp = (source.type.indexOf("video") != -1 || ex) ? "video" : "audio";
+		
+		/* Re-create the MEJS Player if the type has changed or if it's an external source */
+		if (mcOptions.playerType !== tp || ex) {
+			if (d) console.log("Replacing MediaElementPlayer");
+			mcOptions.playerType = tp;
+			el.first().get(0).player.remove();
+			initialize(!ex); // Don't add fallback if external
+			el = $("#" + mcOptions.uid);
+			el.attr("type", source.type).attr("src", source.src);
+			mejsplayer = new MediaElementPlayer(el, mejsOptions);
+		} 
+		/* Set the source if not external */
+		if (!ex) {
+			if (d) console.log("Setting mejs-player #" + mcOptions.uid + " source to " + source.src + " [" + source.type + "]");
+			mejsplayer.setSrc(source.src);
+			$("#" + mcOptions.uid + " object param[name='flashvars']").attr("value", "controls=true&amp;file=" + source.src);
+		}
 		mejsplayer.load();
 	};
 	
-	// RPC calls from server
+	/* Get player state */
+	t.getState = function() {  
+		return mejsplayer.media;
+	}
+	
+	t.getPlayerType = function() {
+		return mcOptions.playerType;
+	}
+	
+	/* RPC calls from server */
 	t.play = function () {
 		mejsplayer.play();
 	}
@@ -126,17 +139,7 @@ mejsplayer.player = function (element, mejsOptions, mcOptions, rpcOptions) {
 		mejsplayer.setCurrentTime(currentTime);
 	}
 	
-	function updateState(mediaElement) {
-		playerState.paused = mediaElement.paused;
-		playerState.ended = mediaElement.ended;
-		playerState.seeking = mediaElement.seeking;
-		playerState.duration = mediaElement.duration;
-		playerState.muted = mediaElement.muted;
-		playerState.volume = mediaElement.volume;
-		playerState.currentTime = mediaElement.currentTime;
-	}
-	
-	// RPC calls to server (events)
+	/* RPC calls to server (client-side events) */
 	function ended () {
 		if (d) console.log("Client notification: playbackended");
 		t.notifyPlaybackEnded();

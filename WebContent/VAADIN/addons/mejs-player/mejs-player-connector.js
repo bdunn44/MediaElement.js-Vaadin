@@ -75,17 +75,14 @@ com_kbdunn_vaadin_addons_mediaelement_MediaComponent = function () {
 	
 	// RPC call from server to initialize the player
 	t.initPlayer = function() {
-		console.log("INITIALIZING PLAYER");
-		//if (d === true) { this.dumpState(); };
-		//if (p) { delete p; console.log("mejs-player deleted"); }
-		//p = new mejsplayer.player(t.getElement(), o, t.mpo, t.rpco);//new t.mpo, new t.rpco);
+		if (d) console.log("INITIALIZING PLAYER");
 		p = new mejsplayer.player(e, o, mpo, rpco);
 		if (s.source) t.updateSource();
 	}
 	
 	// Update the sources of the media player from information in the shared state
 	t.updateSource = function() {
-		console.log("updateSource(). Source is " + s.source)
+		if (d) console.log("updateSource(). Source is " + s.source.src + " [" + s.source.type + "]")
 		if (!s.source) { 
 			if (d) console.log("updateSource() was called, but no source is set in the shared state."); 
 			return; 
@@ -105,8 +102,11 @@ com_kbdunn_vaadin_addons_mediaelement_MediaComponent = function () {
 			// Theme resource
 			src.src = getURL() + src.src.replace("theme://", "VAADIN/");
 			// src.src = unescape(encodeURIComponent(src.src));
-		}
-		if (d) console.log("Updating player source to '" + src.src + " (" + src.type + ")'");
+		} else if (src.src.indexOf("youtube.com") !== -1 || src.src.indexOf("youtu.be") !== -1) {
+			src.type = "video/youtube";
+		} /*else if (src.src.indexOf("vimeo.com") !== -1) {
+			src.type = "video/vimeo";
+		}*/
 		p.setSource(src);
 	}
 	
@@ -122,13 +122,15 @@ com_kbdunn_vaadin_addons_mediaelement_MediaComponent = function () {
 	// Update shared state with player state
 	t.updateState = function() {
 		if (d) console.log("Updating shared state");
-		t.updateSharedState(p.getState().paused, 
-				p.getState().ended, 
-				p.getState().seeking, 
-				p.getState().duration, 
-				p.getState().muted, 
-				p.getState().volume, 
-				p.getState().currentTime);
+		var ps = p.getState();
+		t.updateSharedState(ps.paused, 
+				ps.ended, 
+				ps.seeking, 
+				ps.duration, 
+				ps.muted, 
+				ps.volume, 
+				ps.currentTime,
+				p.getPlayerType());
 	}
 	
 	// RPC calls from server
