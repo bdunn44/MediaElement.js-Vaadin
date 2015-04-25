@@ -30,4 +30,9 @@ audioPlayer.play();
 MediaComponent videoPlayer = new MediaComponent(MediaComponent.Type.VIDEO);
 layout.addComponent(videoPlayer);
 videoPlayer.setSource(new FileResource(new File("/path/to/video.mp4")));
+
+// YouTube player
+MediaComponent videoPlayer = new MediaComponent(MediaComponent.Type.VIDEO);
+layout.addComponent(videoPlayer);
+videoPlayer.setSource(new ExternalResource("https://youtu.be/kh29_SERH0Y"));
 ```
