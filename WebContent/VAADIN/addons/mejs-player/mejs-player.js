@@ -88,10 +88,11 @@ mejsplayer.player = function (element, mejsOptions, mcOptions, rpcOptions) {
 		
 		var el = $('#' + mcOptions.uid);
 		var yt = source.type === 'video/youtube';// || source.type === "video/vimeo";
-		var tp = (source.type.indexOf("video") != -1 || ex) ? 'video' : 'audio';
+		var tp = (source.type.indexOf("video") != -1 || yt) ? 'video' : 'audio';
+		var oyt = $('#' + mcOptions.uid).attr('type') === 'video/youtube';
 		
 		/* Re-create the MEJS Player if the type has changed or if YouTube */
-		if (mcOptions.playerType !== tp || yt) {
+		if (mcOptions.playerType !== tp || yt || oyt) {
 			if (d) console.log('Replacing MediaElementPlayer');
 			mcOptions.playerType = tp;
 			el.first().get(0).player.remove();
