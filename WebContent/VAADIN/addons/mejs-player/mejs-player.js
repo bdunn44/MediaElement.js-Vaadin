@@ -1,6 +1,3 @@
-// Version 1.2.4
-
-// Define the namespace
 var mejsplayer = mejsplayer || {};
 
 mejsplayer.player = function (element, mejsOptions, mcOptions, rpcOptions) {
@@ -10,25 +7,27 @@ mejsplayer.player = function (element, mejsOptions, mcOptions, rpcOptions) {
 		d = mejsOptions.enablePluginDebug === true;
 	
 	/* Create the HTML5 audio or video element */
-	function initialize(f) {
-		if (mcOptions.playerType === "audio") {
+	function initializeDOM(f) {
+		if (mcOptions.playerType === 'audio') {
 			createAudio();
-		} else if (mcOptions.playerType === "video") {
+		} else if (mcOptions.playerType === 'video') {
 			createVideo();
 		}
-		if (f === true) addFallback();
+		if (f === true) {
+			addFallback();
+		}
 	}
 	
-	// Create audio/video HTML5 players
+	/* Create audio/video HTML5 players */
 	function createAudio() {
-		if (d) console.log("Creating an Audio player");
+		if (d) console.log('Creating an Audio player');
 		element.innerHTML = '<audio id="' + mcOptions.uid + '" controls="controls" preload="none">'
 					+ '<source type="audio/mp3" src="nothing" />'
 					+ '</audio>';
 	}
 	
 	function createVideo() {
-		if (d) console.log("Creating a Video player");
+		if (d) console.log('Creating a Video player');
 		element.innerHTML = '<video id="' + mcOptions.uid  + '" controls="controls" preload="none">'
 					+ '<source type="video/mp4" src="nothing" />'
 					+ '</video>';
@@ -48,20 +47,20 @@ mejsplayer.player = function (element, mejsOptions, mcOptions, rpcOptions) {
 		
 		/* Enable Flash and/or Silverlight fallback */
 		if (mcOptions.flash == true && mcOptions.silverlight == true) {
-			if (d) console.log("Adding Flash and Silverlight fallback");
-			$("#" + mcOptions.uid).append(flashFallback);
-			$("#" + mcOptions.uid).append(silverlightFallback);
-			mejsOptions.plugins = ["flash", "silverlight"];
+			if (d) console.log('Adding Flash and Silverlight fallback');
+			$('#' + mcOptions.uid).append(flashFallback);
+			$('#' + mcOptions.uid).append(silverlightFallback);
+			mejsOptions.plugins = ['flash', 'silverlight'];
 			
 		} else if (mcOptions.flash == true) {
-			if (d) console.log("Adding Flash fallback");
-			$("#" + mcOptions.uid).append(flashFallback);
-			mejsOptions.plugins = ["flash"];
+			if (d) console.log('Adding Flash fallback');
+			$('#' + mcOptions.uid).append(flashFallback);
+			mejsOptions.plugins = ['flash'];
 			
 		} else if (mcOptions.silverlight == true) {
-			if (d) console.log("Adding Silverlight fallback");
-			$("#" + mcOptions.uid).append(silverlightFallback);
-			mejsOptions.plugins = ["silverlight"];
+			if (d) console.log('Adding Silverlight fallback');
+			$('#' + mcOptions.uid).append(silverlightFallback);
+			mejsOptions.plugins = ['silverlight'];
 		}
 	}
 	
@@ -77,38 +76,44 @@ mejsplayer.player = function (element, mejsOptions, mcOptions, rpcOptions) {
 		if (rpcOptions.seekedRpc) { mediaElement.addEventListener('seeked', seeked, false); }
 		if (rpcOptions.volumeChangeRpc) { mediaElement.addEventListener('volumechange', volumechange, false); }
 		if (rpcOptions.loadedDataRpc) { mediaElement.addEventListener('loadeddata', loadeddata, false); }
-    };
+    }
     
 	/* Create MEJS player */
-    initialize(true);
-	var mejsplayer = new MediaElementPlayer($("#" + mcOptions.uid), mejsOptions);
+    initializeDOM(true);
+	var mejsplayer = new MediaElementPlayer($('#' + mcOptions.uid), mejsOptions);
 	
 	/* Set player source */
 	t.setSource = function(source) {
 		mejsplayer.pause();
 		
-		var el = $("#" + mcOptions.uid);
-		var ex = source.type === "video/youtube";// || source.type === "video/vimeo";
-		var tp = (source.type.indexOf("video") != -1 || ex) ? "video" : "audio";
+		var el = $('#' + mcOptions.uid);
+		var yt = source.type === 'video/youtube';// || source.type === "video/vimeo";
+		var tp = (source.type.indexOf("video") != -1 || ex) ? 'video' : 'audio';
 		
-		/* Re-create the MEJS Player if the type has changed or if it's an external source */
-		if (mcOptions.playerType !== tp || ex) {
-			if (d) console.log("Replacing MediaElementPlayer");
+		/* Re-create the MEJS Player if the type has changed or if YouTube */
+		if (mcOptions.playerType !== tp || yt) {
+			if (d) console.log('Replacing MediaElementPlayer');
 			mcOptions.playerType = tp;
 			el.first().get(0).player.remove();
-			initialize(!ex); // Don't add fallback if external
-			el = $("#" + mcOptions.uid);
-			el.attr("type", source.type).attr("src", source.src);
+			initializeDOM(!yt); // Don't add fallback if YouTube
+			el = $('#' + mcOptions.uid);
+			el.attr('type', source.type).attr('src', source.src);
+			if (yt) {
+				mejsOptions.plugins.reverse();
+				mejsOptions.plugins.push('youtube');
+				mejsOptions.plugins.reverse();
+				if (d) console.log('Enabled plugins: ' + mejsOptions.plugins);
+			}
 			mejsplayer = new MediaElementPlayer(el, mejsOptions);
 		} 
-		/* Set the source if not external */
-		if (!ex) {
-			if (d) console.log("Setting mejs-player #" + mcOptions.uid + " source to " + source.src + " [" + source.type + "]");
+		/* Set the source if not YouTube */
+		if (!yt) {
+			if (d) console.log('Setting mejs-player #' + mcOptions.uid + ' source to ' + source.src + ' [' + source.type + ']');
 			mejsplayer.setSrc(source.src);
-			$("#" + mcOptions.uid + " object param[name='flashvars']").attr("value", "controls=true&amp;file=" + source.src);
+			$('#' + mcOptions.uid + ' object param[name="flashvars"]').attr('value', 'controls=true&amp;file=' + source.src);
 		}
 		mejsplayer.load();
-	};
+	}
 	
 	/* Get player state */
 	t.getState = function() {  
@@ -141,39 +146,39 @@ mejsplayer.player = function (element, mejsOptions, mcOptions, rpcOptions) {
 	
 	/* RPC calls to server (client-side events) */
 	function ended () {
-		if (d) console.log("Client notification: playbackended");
+		if (d) console.log('Client notification: playbackended');
 		t.notifyPlaybackEnded();
 	}
 	function loadeddata () {
-		if (d) console.log("Client notification: loadeddata");
+		if (d) console.log('Client notification: loadeddata');
 		t.notifyLoadedData();
 	}
 	function seeked () {
-		if (d) console.log("Client notification: seeked");
+		if (d) console.log('Client notification: seeked');
 		t.notifySeeked();
 	}
 	function canplay () {
-		if (d) console.log("Client notification: canplay");
+		if (d) console.log('Client notification: canplay');
 		t.notifyCanPlay();
 	}
 	function playing () {
-		if (d) console.log("Client notification: playing");
+		if (d) console.log('Client notification: playing');
 		t.notifyPlaying();
 	}
 	function pause () {
-		if (d) console.log("Client notification: pause");
+		if (d) console.log('Client notification: pause');
 		t.notifyPaused();
 	}
 	function play () {
-		if (d) console.log("Client notification: play");
+		if (d) console.log('Client notification: play');
 		t.notifyPlayed();
 	}
 	function loadedmetadata () {
-		if (d) console.log("Client notification: loadedmetadata");
+		if (d) console.log('Client notification: loadedmetadata');
 		t.notifyLoadedMetadata();
 	}
 	function volumechange () {
-		if (d) console.log("Client notification: volumechange");
+		if (d) console.log('Client notification: volumechange');
 		t.notifyVolumeChanged();
 	}
 }
