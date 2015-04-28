@@ -13,13 +13,13 @@ Code Example
 import com.kbdunn.vaadin.addons.mediaelement.MediaComponent;
 
 // Audio player with PlaybackEndedListener
-MediaComponent audioPlayer = new MediaComponent(MediaComponent.Type.AUDIO);
+MediaElementPlayer audioPlayer = new MediaElementPlayer();
 layout.addComponent(audioPlayer);
 audioPlayer.setSource(new FileResource(new File("/path/to/song.mp3")));
 audioPlayer.addPlaybackEndedListener(new PlaybackEndedListener() {
 
         @Override
-        public void playbackEnded(MediaComponent component) {
+        public void playbackEnded(MediaElementPlayer component) {
                 component.setSource(new FileResource(new File("/path/to/next/song.m4a")));
                 component.play();
         }
@@ -27,12 +27,12 @@ audioPlayer.addPlaybackEndedListener(new PlaybackEndedListener() {
 audioPlayer.play();
 
 // Video player
-MediaComponent videoPlayer = new MediaComponent(MediaComponent.Type.VIDEO);
+MediaElementPlayer videoPlayer = new MediaElementPlayer(MediaElementPlayer.Type.VIDEO);
 layout.addComponent(videoPlayer);
 videoPlayer.setSource(new FileResource(new File("/path/to/video.mp4")));
 
 // YouTube player
-MediaComponent videoPlayer = new MediaComponent(MediaComponent.Type.VIDEO);
+MediaElementPlayer videoPlayer = new MediaElementPlayer(MediaComponent.Type.VIDEO);
 layout.addComponent(videoPlayer);
 videoPlayer.setSource(new ExternalResource("https://youtu.be/kh29_SERH0Y"));
 ```
