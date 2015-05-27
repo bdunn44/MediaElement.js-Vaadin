@@ -19,6 +19,7 @@ import com.vaadin.ui.JavaScriptFunction;
 import elemental.json.JsonArray;
 import elemental.json.JsonException;
 
+
 @JavaScript({"vaadin://addons/mejs-player/mediaelement-2.16.4/jquery.js", "vaadin://addons/mejs-player/mediaelement-2.16.4/mediaelement-and-player.min.js", 
 	"vaadin://addons/mejs-player/mejs-player.js", "vaadin://addons/mejs-player/mejs-player-connector.js"})
 @StyleSheet("vaadin://addons/mejs-player/mediaelement-2.16.4/mediaelementplayer.min.css")
@@ -125,11 +126,9 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 	// Add Accept-Ranges: bytes to all responses to support seeking in non-IE browsers
 	// Catch IOException that is thrown when the player source has changed and the client aborts the previous connection
 	@Override
-	public boolean handleConnectorRequest(VaadinRequest request, VaadinResponse response, String path) throws IOException {
+	public boolean handleConnectorRequest(VaadinRequest request, VaadinResponse response, String path) {
 		try {
-			System.out.println("path="+path);
 			if (path.startsWith("0")) {
-				System.out.println("Adding Accept-Ranges: bytes header");
 				response.setHeader("Accept-Ranges", "bytes"); 
 			}
 			return super.handleConnectorRequest(request, response, path);

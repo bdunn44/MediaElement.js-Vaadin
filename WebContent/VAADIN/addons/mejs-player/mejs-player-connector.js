@@ -4,7 +4,7 @@ com_kbdunn_vaadin_addons_mediaelement_MediaElementPlayer = function () {
 	var e = t.getElement();
 	var	s = t.getState();
 	var	o = s.options;
-	var	d = false; /* debugger */
+	var	d = true; /* debugger */
 	var	p;
 	
 	if (d) {
@@ -82,6 +82,10 @@ com_kbdunn_vaadin_addons_mediaelement_MediaElementPlayer = function () {
 		if (d) console.log('updateSource(). Source is ' + s.source.src + ' [' + s.source.type + ']');
 		if (!s.source) { 
 			if (d) console.log('updateSource() was called, but no source is set in the shared state.'); 
+			return; 
+		}
+		if (!p) { 
+			if (d) console.log('updateSource() was called, but the player has not been initialized.'); 
 			return; 
 		}
 		/* Copy shared state source */
