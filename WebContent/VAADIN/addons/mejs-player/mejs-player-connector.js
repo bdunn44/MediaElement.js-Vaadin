@@ -1,53 +1,54 @@
 com_kbdunn_vaadin_addons_mediaelement_MediaElementPlayer = function () {
 	
 	var t = this;
+	var l = 'com.kbdunn.vaadin.addons.mediaelement.mejs-player-connector: ';
 	var e = t.getElement();
 	var	s = t.getState();
 	var	o = s.options;
-	var	d = true; /* debugger */
+	var	d = false; /* debugger */
 	var	p;
 	
 	if (d) {
-		console.log('Creating an mejs-player component');
+		console.log(l + 'Creating an mejs-player component');
 		dumpState();
 		o.enablePluginDebug = true;
 	}
 	
 	function dumpState() {
-		console.log('Dumping shared state information....');
-		console.log('Player Type: ' + s.playerType);
-		console.log('Flash Fallback: ' + s.flashFallbackEnabled);
-		console.log('Silverlight Fallback: ' + s.silverlightFallbackEnabled);
+		console.log(l + 'Dumping shared state information....');
+		console.log(l + 'Player Type: ' + s.playerType);
+		console.log(l + 'Flash Fallback: ' + s.flashFallbackEnabled);
+		console.log(l + 'Silverlight Fallback: ' + s.silverlightFallbackEnabled);
 		
-		console.log('MEJS Options: ');
+		console.log(l + 'MEJS Options: ');
 		for (var opt in o) {
-			console.log('  ' + opt + ': ' + o[opt]);
+			console.log(l + '  ' + opt + ': ' + o[opt]);
 		}
 		
-		console.log('Source:');
+		console.log(l + 'Source:');
 		if (s.source) {
-			console.log('  ' + s.source.src + ' (' + s.source.type + ')');
+			console.log(l + '  ' + s.source.src + ' (' + s.source.type + ')');
 		}
 		
-		console.log('Player state properties:');
-		console.log('  paused: ' + s.paused);
-		console.log('  ended: ' + s.ended);
-		console.log('  seeking: ' + s.seeking);
-		console.log('  duration: ' + s.duration);
-		console.log('  muted: ' + s.muted);
-		console.log('  volume: ' + s.volume);
-		console.log('  currentTime: ' + s.currentTime);
+		console.log(l + 'Player state properties:');
+		console.log(l + '  paused: ' + s.paused);
+		console.log(l + '  ended: ' + s.ended);
+		console.log(l + '  seeking: ' + s.seeking);
+		console.log(l + '  duration: ' + s.duration);
+		console.log(l + '  muted: ' + s.muted);
+		console.log(l + '  volume: ' + s.volume);
+		console.log(l + '  currentTime: ' + s.currentTime);
 		
-		console.log('Enabled RPC Calls:');
-		console.log('  Playback Ended: ' + s.playbackEndedRpc);
-		console.log('  Can Play: ' + s.canPlayRpc);
-		console.log('  Loaded Metadata: ' + s.loadedMetadataRpc);
-		console.log('  Pause: ' + s.pauseRpc);
-		console.log('  Playing: ' + s.playingRpc);
-		console.log('  Play: ' + s.playRpc);
-		console.log('  Seeked: ' + s.seekedRpc);
-		console.log('  Volume Change: ' + s.volumeChangeRpc);
-		console.log('  Loaded Data: ' + s.loadedDataRpc);
+		console.log(l + 'Enabled RPC Calls:');
+		console.log(l + '  Playback Ended: ' + s.playbackEndedRpc);
+		console.log(l + '  Can Play: ' + s.canPlayRpc);
+		console.log(l + '  Loaded Metadata: ' + s.loadedMetadataRpc);
+		console.log(l + '  Pause: ' + s.pauseRpc);
+		console.log(l + '  Playing: ' + s.playingRpc);
+		console.log(l + '  Play: ' + s.playRpc);
+		console.log(l + '  Seeked: ' + s.seekedRpc);
+		console.log(l + '  Volume Change: ' + s.volumeChangeRpc);
+		console.log(l + '  Loaded Data: ' + s.loadedDataRpc);
 	}
 	
 	/* Split options into separate objects */
@@ -72,20 +73,20 @@ com_kbdunn_vaadin_addons_mediaelement_MediaElementPlayer = function () {
 	
 	/* RPC call from server to initialize the player */
 	t.initPlayer = function() {
-		if (d) console.log('INITIALIZING PLAYER');
+		if (d) console.log(l + 'INITIALIZING PLAYER');
 		p = new mejsplayer.player(e, o, mpo, rpco);
 		if (s.source) t.updateSource();
 	}
 	
 	/* Update the sources of the media player from information in the shared state */
 	t.updateSource = function() {
-		if (d) console.log('updateSource(). Source is ' + s.source.src + ' [' + s.source.type + ']');
+		if (d) console.log(l + 'updateSource(). Source is ' + s.source.src + ' [' + s.source.type + ']');
 		if (!s.source) { 
-			if (d) console.log('updateSource() was called, but no source is set in the shared state.'); 
+			if (d) console.log(l + 'updateSource() was called, but no source is set in the shared state.'); 
 			return; 
 		}
 		if (!p) { 
-			if (d) console.log('updateSource() was called, but the player has not been initialized.'); 
+			if (d) console.log(l + 'updateSource() was called, but the player has not been initialized.'); 
 			return; 
 		}
 		/* Copy shared state source */
@@ -118,7 +119,7 @@ com_kbdunn_vaadin_addons_mediaelement_MediaElementPlayer = function () {
 	
 	/* Update shared state with player state */
 	t.updateState = function() {
-		if (d) console.log('Updating shared state');
+		if (d) console.log(l + 'Updating shared state');
 		var ps = p.getState();
 		t.updateSharedState(ps.paused, 
 				ps.ended, 
@@ -132,27 +133,27 @@ com_kbdunn_vaadin_addons_mediaelement_MediaElementPlayer = function () {
 	
 	/* RPC calls from server */
 	t.play = function() {
-		if (d) console.log('Received play() RPC call');
+		if (d) console.log(l + 'Received play() RPC call');
 		p.play();
 	}
 	t.pause = function() {
-		if (d) console.log('Received pause() RPC call');
+		if (d) console.log(l + 'Received pause() RPC call');
 		p.pause();
 	}
 	t.mute = function () {
-		if (d) console.log('Received mute() RPC call');
+		if (d) console.log(l + 'Received mute() RPC call');
 		p.mute();
 	}
 	t.unmute = function () {
-		if (d) console.log('Received unmute() RPC call');
+		if (d) console.log(l + 'Received unmute() RPC call');
 		p.unmute();
 	}
 	t.setVolume = function (volume) {
-		if (d) console.log('Received setVolume() RPC call');
+		if (d) console.log(l + 'Received setVolume() RPC call');
 		p.setVolume(volume);
 	}
 	t.setCurrentTime = function (currentTime) {
-		if (d) console.log('Received setCurrentTime() RPC call');
+		if (d) console.log(l + 'Received setCurrentTime() RPC call');
 		p.setCurrentTime(currentTime);
 	}
 	

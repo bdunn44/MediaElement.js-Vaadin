@@ -2,9 +2,9 @@ var mejsplayer = mejsplayer || {};
 
 mejsplayer.player = function (element, mejsOptions, mcOptions, rpcOptions) {
 	
-	var 
-		t = this,
-		d = mejsOptions.enablePluginDebug === true;
+	var t = this;
+	var l = 'com.kbdunn.vaadin.addons.mediaelement.mejs-player: ';
+	var d = mejsOptions.enablePluginDebug === true;
 	
 	/* Create the HTML5 audio or video element */
 	function initializeDOM(f) {
@@ -20,15 +20,15 @@ mejsplayer.player = function (element, mejsOptions, mcOptions, rpcOptions) {
 	
 	/* Create audio/video HTML5 players */
 	function createAudio() {
-		if (d) console.log('Creating an Audio player');
+		if (d) console.log(l + 'Creating an Audio player');
 		element.innerHTML = '<audio id="' + mcOptions.uid + '" controls="controls" preload="none">'
 					+ '<source type="audio/mp3" src="nothing" />'
 					+ '</audio>';
 	}
 	
 	function createVideo() {
-		if (d) console.log('Creating a Video player');
-		element.innerHTML = '<video id="' + mcOptions.uid  + '" controls="controls" preload="none">'
+		if (d) console.log(l + 'Creating a Video player');
+		element.innerHTML = '<video id="' + mcOptions.uid  + '" style="width:100%;height:100%;" controls="controls" preload="none">'
 					+ '<source type="video/mp4" src="nothing" />'
 					+ '</video>';
 	}
@@ -47,18 +47,18 @@ mejsplayer.player = function (element, mejsOptions, mcOptions, rpcOptions) {
 		
 		/* Enable Flash and/or Silverlight fallback */
 		if (mcOptions.flash == true && mcOptions.silverlight == true) {
-			if (d) console.log('Adding Flash and Silverlight fallback');
+			if (d) console.log(l + 'Adding Flash and Silverlight fallback');
 			$('#' + mcOptions.uid).append(flashFallback);
 			$('#' + mcOptions.uid).append(silverlightFallback);
 			mejsOptions.plugins = ['flash', 'silverlight'];
 			
 		} else if (mcOptions.flash == true) {
-			if (d) console.log('Adding Flash fallback');
+			if (d) console.log(l + 'Adding Flash fallback');
 			$('#' + mcOptions.uid).append(flashFallback);
 			mejsOptions.plugins = ['flash'];
 			
 		} else if (mcOptions.silverlight == true) {
-			if (d) console.log('Adding Silverlight fallback');
+			if (d) console.log(l + 'Adding Silverlight fallback');
 			$('#' + mcOptions.uid).append(silverlightFallback);
 			mejsOptions.plugins = ['silverlight'];
 		}
@@ -93,7 +93,7 @@ mejsplayer.player = function (element, mejsOptions, mcOptions, rpcOptions) {
 		
 		/* Re-create the MEJS Player if the type has changed or if YouTube */
 		if (mcOptions.playerType !== tp || yt || oyt) {
-			if (d) console.log('Replacing MediaElementPlayer');
+			if (d) console.log(l + 'Replacing MediaElementPlayer');
 			mcOptions.playerType = tp;
 			el.first().get(0).player.remove();
 			initializeDOM(!yt); // Don't add fallback if YouTube
@@ -103,13 +103,13 @@ mejsplayer.player = function (element, mejsOptions, mcOptions, rpcOptions) {
 				mejsOptions.plugins.reverse();
 				mejsOptions.plugins.push('youtube');
 				mejsOptions.plugins.reverse();
-				if (d) console.log('Enabled plugins: ' + mejsOptions.plugins);
+				if (d) console.log(l + 'Enabled plugins: ' + mejsOptions.plugins);
 			}
 			mejsplayer = new MediaElementPlayer(el, mejsOptions);
 		} 
 		/* Set the source if not YouTube */
 		if (!yt) {
-			if (d) console.log('Setting mejs-player #' + mcOptions.uid + ' source to ' + source.src + ' [' + source.type + ']');
+			if (d) console.log(l + 'Setting mejs-player #' + mcOptions.uid + ' source to ' + source.src + ' [' + source.type + ']');
 			mejsplayer.setSrc(source.src);
 			$('#' + mcOptions.uid + ' object param[name="flashvars"]').attr('value', 'controls=true&amp;file=' + source.src);
 		}
@@ -147,39 +147,39 @@ mejsplayer.player = function (element, mejsOptions, mcOptions, rpcOptions) {
 	
 	/* RPC calls to server (client-side events) */
 	function ended () {
-		if (d) console.log('Client notification: playbackended');
+		if (d) console.log(l + 'Client notification: playbackended');
 		t.notifyPlaybackEnded();
 	}
 	function loadeddata () {
-		if (d) console.log('Client notification: loadeddata');
+		if (d) console.log(l + 'Client notification: loadeddata');
 		t.notifyLoadedData();
 	}
 	function seeked () {
-		if (d) console.log('Client notification: seeked');
+		if (d) console.log(l + 'Client notification: seeked');
 		t.notifySeeked();
 	}
 	function canplay () {
-		if (d) console.log('Client notification: canplay');
+		if (d) console.log(l + 'Client notification: canplay');
 		t.notifyCanPlay();
 	}
 	function playing () {
-		if (d) console.log('Client notification: playing');
+		if (d) console.log(l + 'Client notification: playing');
 		t.notifyPlaying();
 	}
 	function pause () {
-		if (d) console.log('Client notification: pause');
+		if (d) console.log(l + 'Client notification: pause');
 		t.notifyPaused();
 	}
 	function play () {
-		if (d) console.log('Client notification: play');
+		if (d) console.log(l + 'Client notification: play');
 		t.notifyPlayed();
 	}
 	function loadedmetadata () {
-		if (d) console.log('Client notification: loadedmetadata');
+		if (d) console.log(l + 'Client notification: loadedmetadata');
 		t.notifyLoadedMetadata();
 	}
 	function volumechange () {
-		if (d) console.log('Client notification: volumechange');
+		if (d) console.log(l + 'Client notification: volumechange');
 		t.notifyVolumeChanged();
 	}
 }
