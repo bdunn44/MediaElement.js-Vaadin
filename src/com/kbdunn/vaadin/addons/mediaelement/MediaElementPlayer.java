@@ -20,9 +20,9 @@ import elemental.json.JsonArray;
 import elemental.json.JsonException;
 
 
-@JavaScript({"vaadin://addons/mejs-player/mediaelement-2.16.4/jquery.js", "vaadin://addons/mejs-player/mediaelement-2.16.4/mediaelement-and-player.min.js", 
+@JavaScript({"vaadin://addons/mejs-player/mediaelement-2.20.0/jquery.js", "vaadin://addons/mejs-player/mediaelement-2.20.0/mediaelement-and-player.min.js", 
 	"vaadin://addons/mejs-player/mejs-player.js", "vaadin://addons/mejs-player/mejs-player-connector.js"})
-@StyleSheet("vaadin://addons/mejs-player/mediaelement-2.16.4/mediaelementplayer.min.css")
+@StyleSheet("vaadin://addons/mejs-player/mediaelement-2.20.0/mediaelementplayer.min.css")
 public class MediaElementPlayer extends AbstractJavaScriptComponent implements Serializable {
 	
 	private static final long serialVersionUID = 434066435674155085L;
@@ -57,11 +57,15 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 	 */
 	
 	public MediaElementPlayer() {
-		init(Type.AUDIO, getDefaultOptions(), true, true);
+		init(Type.AUDIO, new MediaElementPlayerOptions(), true, true);
+	}
+	
+	public MediaElementPlayer(MediaElementPlayerOptions options) {
+		init(Type.AUDIO, options, true, true);
 	}
 	
 	public MediaElementPlayer(MediaElementPlayer.Type playerType) {
-		init(playerType, getDefaultOptions(), true, true);
+		init(playerType, new MediaElementPlayerOptions(), true, true);
 	}
 	
 	public MediaElementPlayer(MediaElementPlayer.Type playerType, MediaElementPlayerOptions options) {
@@ -157,7 +161,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 		// Check that MIME type for File or Theme resource is audio or video
 		if (!(source instanceof ExternalResource) 
 				&& !(source.getMIMEType().startsWith("audio") || source.getMIMEType().startsWith("video"))) {
-			throw new IllegalArgumentException("The resource MIME type must be audio or video");
+			throw new IllegalArgumentException("Invalid resource MIME type '" + source.getMIMEType() + "'. The resource MIME type must be audio or video");
 		}
 		// Check that the URL of an External resource points to YouTube
 		if (source instanceof ExternalResource 
@@ -181,8 +185,12 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 	 * 
 	 */
 	
+	/*
+	 * @deprecated As of release 1.2.8. Use zero-argument constructor {@link #()} instead.
+	 */
+	@Deprecated
 	public static MediaElementPlayerOptions getDefaultOptions() {
-		return MediaElementPlayerOptions.getDefaultOptions();
+		return new MediaElementPlayerOptions();
 	}
 	
 	public MediaElementPlayerOptions getOptions() {
