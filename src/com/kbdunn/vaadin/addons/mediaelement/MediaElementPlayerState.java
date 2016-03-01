@@ -1,7 +1,5 @@
 package com.kbdunn.vaadin.addons.mediaelement;
 
-import java.util.Map;
-
 import com.vaadin.shared.ui.JavaScriptComponentState;
 
 public class MediaElementPlayerState extends JavaScriptComponentState {
@@ -11,8 +9,8 @@ public class MediaElementPlayerState extends JavaScriptComponentState {
 	public MediaSource source; 
 	
 	// MediaElementJS options
-	//public MediaComponentOptions options;
-	public Map<String, Object> options;
+	//public Map<String, Object> options;
+	public MediaElementPlayerOptions options;
 	
 	// HTML5 player type (audio/video)
 	public String playerType;
