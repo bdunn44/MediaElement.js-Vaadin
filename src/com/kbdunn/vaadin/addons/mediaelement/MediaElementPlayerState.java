@@ -32,13 +32,4 @@ public class MediaElementPlayerState extends JavaScriptComponentState {
 	public boolean seekedRpc = false;;
 	public boolean volumeChangeRpc = false;
 	public boolean loadedDataRpc = false;
-	
-	// MediaElementJS player state
-	public boolean paused;
-	public boolean ended;
-	public boolean seeking;
-	public int duration;
-	public boolean muted;
-	public float volume;
-	public int currentTime;
 }

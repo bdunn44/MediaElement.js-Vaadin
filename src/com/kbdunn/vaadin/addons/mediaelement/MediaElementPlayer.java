@@ -4,6 +4,16 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 
+import com.kbdunn.vaadin.addons.mediaelement.interfaces.CanPlayListener;
+import com.kbdunn.vaadin.addons.mediaelement.interfaces.LoadedDataListener;
+import com.kbdunn.vaadin.addons.mediaelement.interfaces.LoadedMetadataListener;
+import com.kbdunn.vaadin.addons.mediaelement.interfaces.PausedListener;
+import com.kbdunn.vaadin.addons.mediaelement.interfaces.PlaybackEndedListener;
+import com.kbdunn.vaadin.addons.mediaelement.interfaces.PlayedListener;
+import com.kbdunn.vaadin.addons.mediaelement.interfaces.PlayingListener;
+import com.kbdunn.vaadin.addons.mediaelement.interfaces.SeekedListener;
+import com.kbdunn.vaadin.addons.mediaelement.interfaces.StateUpdatedListener;
+import com.kbdunn.vaadin.addons.mediaelement.interfaces.VolumeChangedListener;
 import com.vaadin.annotations.JavaScript;
 import com.vaadin.annotations.StyleSheet;
 import com.vaadin.server.ExternalResource;
@@ -38,6 +48,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 		}
 	}
 	
+	/* Listeners */
 	private ArrayList<PlaybackEndedListener> playbackEndedListeners = new ArrayList<PlaybackEndedListener>();
 	private ArrayList<CanPlayListener> canPlayListeners = new ArrayList<CanPlayListener>();
 	private ArrayList<LoadedMetadataListener> loadedMetadataListeners = new ArrayList<LoadedMetadataListener>();
@@ -47,8 +58,19 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 	private ArrayList<SeekedListener> seekedListeners = new ArrayList<SeekedListener>();
 	private ArrayList<VolumeChangedListener> volumeChangeListeners = new ArrayList<VolumeChangedListener>();
 	private ArrayList<LoadedDataListener> loadedDataListeners = new ArrayList<LoadedDataListener>();
+	private ArrayList<StateUpdatedListener> stateUpdateListeners = new ArrayList<StateUpdatedListener>();
 	
+	/* Player intialization flag */
 	private boolean callInitRpc;
+	
+	/* Player state */
+	private boolean paused;
+	private boolean ended;
+	private boolean seeking;
+	private int duration;
+	private boolean muted;
+	private float volume;
+	private int currentTime;
 	
 	/*
 	 * 
@@ -84,22 +106,20 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 		getState().flashFallbackEnabled = flashFallback;
 		
 		// Connector function to updated shared state from the client side
-		addFunction("updateSharedState", new JavaScriptFunction() {
+		addFunction("updatePlayerState", new JavaScriptFunction() {
 			private static final long serialVersionUID = 5490315638431042879L;
 			
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
-				try {
-					getState().paused = arguments.getBoolean(0);
-					getState().ended = arguments.getBoolean(1);
-					getState().seeking = arguments.getBoolean(2);
-					getState().duration = (int) arguments.getNumber(3);
-					getState().muted = arguments.getBoolean(4);
-					getState().volume = (float) arguments.getNumber(5);
-					getState().currentTime = (int) arguments.getNumber(6);
-					getState().playerType = arguments.getString(7);
-				} catch (JsonException e) {
-					// Ignore
+				paused = arguments.getBoolean(0);
+				ended = arguments.getBoolean(1);
+				seeking = arguments.getBoolean(2);
+				duration = (int) arguments.getNumber(3);
+				muted = arguments.getBoolean(4);
+				volume = (float) arguments.getNumber(5);
+				currentTime = (int) arguments.getNumber(6);
+				for (StateUpdatedListener listener : stateUpdateListeners) {
+					listener.stateUpdated(getMe());
 				}
 			}
 		});
@@ -241,7 +261,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 	// must be from 1 to 10
 	public void setVolume(int volume) {
 		if (volume < 0 || volume > 10) throw new IllegalArgumentException("Volume must be between 1 and 10");
-		callFunction("setVolume", new Object[]{ (float) volume / 10 });
+		callFunction("setVolume", new Object[]{ (double) volume / 10 });
 	}
 	
 	public void setCurrentTime(int time) {
@@ -255,7 +275,6 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 	 */
 	
 	public Type getPlayerType() {
-		updateState();
 		return Type.valueOf(getState().playerType);
 	}
 	
@@ -268,38 +287,31 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 	}
 	
 	public boolean isPaused() {
-		updateState();
-		return getState().paused;
+		return paused;
 	}
 	
 	public boolean isEnded() {
-		updateState();
-		return getState().ended;
+		return ended;
 	}
 	
 	public boolean isSeeking() {
-		updateState();
-		return getState().seeking;
+		return seeking;
 	}
 	
 	public int getDuration() {
-		updateState();
-		return getState().duration;
+		return duration;
 	}
 	
 	public boolean isMuted() {
-		updateState();
-		return getState().muted;
+		return muted;
 	}
 	
 	public int getVolume() {
-		updateState();
-		return (int) (getState().volume * 10);
+		return (int) (volume * 10);
 	}
 	
 	public int getCurrentTime() {
-		updateState();
-		return getState().currentTime;
+		return currentTime;
 	}
 	
 	@Override
@@ -307,7 +319,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 		return (MediaElementPlayerState) super.getState();
 	}
 	
-	private void updateState() {
+	public void requestPlayerStateUpdate() {
 		callFunction("updateState", new Object[]{});
 	}
 	
@@ -426,11 +438,27 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			callInitRpc = true;
 		}
 	}
+
+	public void removePlaybackEndedListener(PlaybackEndedListener listener) {
+		playbackEndedListeners.remove(listener);
+		if (getState().playbackEndedRpc && playbackEndedListeners.isEmpty()) {
+			getState().playbackEndedRpc = false;
+			callInitRpc = true;
+		}
+	}
 	
 	public void addCanPlayListener(CanPlayListener listener) {
 		canPlayListeners.add(listener);
 		if (!getState().canPlayRpc) { 
 			getState().canPlayRpc = true;
+			callInitRpc = true;
+		}
+	}
+	
+	public void removeCanPlayListener(CanPlayListener listener) {
+		canPlayListeners.remove(listener);
+		if (getState().canPlayRpc && canPlayListeners.isEmpty()) { 
+			getState().canPlayRpc = false;
 			callInitRpc = true;
 		}
 	}
@@ -443,10 +471,26 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 		}
 	}
 	
+	public void removeLoadedMetadataListener(LoadedMetadataListener listener) {
+		loadedMetadataListeners.remove(listener);
+		if (getState().loadedMetadataRpc && loadedMetadataListeners.isEmpty()) {
+			getState().loadedMetadataRpc = false;
+			callInitRpc = true;
+		}
+	}
+	
 	public void addPauseListener(PausedListener listener) {
 		pauseListeners.add(listener);
 		if (!getState().pauseRpc) {
 			getState().pauseRpc = true;
+			callInitRpc = true;
+		}
+	}
+	
+	public void removePauseListener(PausedListener listener) {
+		pauseListeners.remove(listener);
+		if (getState().pauseRpc && pauseListeners.isEmpty()) {
+			getState().pauseRpc = false;
 			callInitRpc = true;
 		}
 	}
@@ -458,11 +502,27 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			callInitRpc = true;
 		}
 	}
+	
+	public void removePlayingListener(PlayingListener listener) {
+		playingListeners.remove(listener);
+		if (getState().playingRpc && playingListeners.isEmpty()) {
+			getState().playingRpc = false;
+			callInitRpc = true;
+		}
+	}
 
 	public void addPlayListener(PlayedListener listener) {
 		playListeners.add(listener);
 		if (!getState().playRpc) {
 			getState().playRpc = true;
+			callInitRpc = true;
+		}
+	}
+
+	public void removePlayListener(PlayedListener listener) {
+		playListeners.remove(listener);
+		if (getState().playRpc && playListeners.isEmpty()) {
+			getState().playRpc = false;
 			callInitRpc = true;
 		}
 	}
@@ -475,10 +535,26 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 		}
 	}
 	
+	public void removeSeekedListener(SeekedListener listener) {
+		seekedListeners.remove(listener);
+		if (getState().seekedRpc && seekedListeners.isEmpty()) {
+			getState().seekedRpc = false;
+			callInitRpc = true;
+		}
+	}
+	
 	public void addVolumeChangeListener(VolumeChangedListener listener) {
 		volumeChangeListeners.add(listener);
 		if (!getState().volumeChangeRpc) {
 			getState().volumeChangeRpc = true;
+			callInitRpc = true;
+		}
+	}
+	
+	public void removeVolumeChangeListener(VolumeChangedListener listener) {
+		volumeChangeListeners.remove(listener);
+		if (getState().volumeChangeRpc && volumeChangeListeners.isEmpty()) {
+			getState().volumeChangeRpc = false;
 			callInitRpc = true;
 		}
 	}
@@ -489,5 +565,21 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			getState().loadedDataRpc = true;
 			callInitRpc = true;
 		}
+	}
+	
+	public void removeLoadedDataListener(LoadedDataListener listener) {
+		loadedDataListeners.remove(listener);
+		if (getState().loadedDataRpc && loadedDataListeners.isEmpty()) {
+			getState().loadedDataRpc = false;
+			callInitRpc = true;
+		}
+	}
+	
+	public void addStateUpdatedListener(StateUpdatedListener listener) {
+		stateUpdateListeners.add(listener);
+	}
+	
+	public void removeStateUpdatedListener(StateUpdatedListener listener) {
+		stateUpdateListeners.remove(listener);
 	}
 }
