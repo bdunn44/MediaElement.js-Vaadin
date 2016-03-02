@@ -1,7 +1,6 @@
 com_kbdunn_vaadin_addons_mediaelement_MediaElementPlayer = function () {
 	
 	var t = this;
-	var l = 'com.kbdunn.vaadin.addons.mediaelement.mejs-player-connector: ';
 	var e = t.getElement();
 	var	s = t.getState();
 	var	o = s.options;
@@ -9,91 +8,96 @@ com_kbdunn_vaadin_addons_mediaelement_MediaElementPlayer = function () {
 	var	p;
 	
 	if (d) {
-		console.log(l + 'Creating an mejs-player component');
+		console.log('Creating an mejs-player component');
 		dumpState();
 		o.enablePluginDebug = true;
 	}
 	
 	function dumpState() {
-		console.log(l + 'Dumping shared state information....');
-		console.log(l + 'Player Type: ' + s.playerType);
-		console.log(l + 'Flash Fallback: ' + s.flashFallbackEnabled);
-		console.log(l + 'Silverlight Fallback: ' + s.silverlightFallbackEnabled);
+		console.log('Dumping shared state information....');
+		console.log('Player Type: ' + s.playerType);
+		console.log('Flash Fallback: ' + s.flashFallbackEnabled);
+		console.log('Silverlight Fallback: ' + s.silverlightFallbackEnabled);
 		
-		console.log(l + 'MEJS Options: ');
+		console.log('MEJS Options: ');
 		for (var opt in o) {
-			console.log(l + '  ' + opt + ': ' + o[opt]);
+			console.log('  ' + opt + ': ' + o[opt]);
 		}
 		
-		console.log(l + 'Source:');
+		console.log('Source:');
 		if (s.source) {
-			console.log(l + '  ' + s.source.src + ' (' + s.source.type + ')');
+			console.log('  ' + s.source.src + ' (' + s.source.type + ')');
 		}
 		
-		console.log(l + 'Player state properties:');
-		console.log(l + '  paused: ' + s.paused);
-		console.log(l + '  ended: ' + s.ended);
-		console.log(l + '  seeking: ' + s.seeking);
-		console.log(l + '  duration: ' + s.duration);
-		console.log(l + '  muted: ' + s.muted);
-		console.log(l + '  volume: ' + s.volume);
-		console.log(l + '  currentTime: ' + s.currentTime);
+		console.log('Player state properties:');
+		console.log('  paused: ' + s.paused);
+		console.log('  ended: ' + s.ended);
+		console.log('  seeking: ' + s.seeking);
+		console.log('  duration: ' + s.duration);
+		console.log('  muted: ' + s.muted);
+		console.log('  volume: ' + s.volume);
+		console.log('  currentTime: ' + s.currentTime);
 		
-		console.log(l + 'Enabled RPC Calls:');
-		console.log(l + '  Playback Ended: ' + s.playbackEndedRpc);
-		console.log(l + '  Can Play: ' + s.canPlayRpc);
-		console.log(l + '  Loaded Metadata: ' + s.loadedMetadataRpc);
-		console.log(l + '  Pause: ' + s.pauseRpc);
-		console.log(l + '  Playing: ' + s.playingRpc);
-		console.log(l + '  Play: ' + s.playRpc);
-		console.log(l + '  Seeked: ' + s.seekedRpc);
-		console.log(l + '  Volume Change: ' + s.volumeChangeRpc);
-		console.log(l + '  Loaded Data: ' + s.loadedDataRpc);
+		console.log('Enabled RPC Calls:');
+		console.log('  Playback Ended: ' + s.playbackEndedRpc);
+		console.log('  Can Play: ' + s.canPlayRpc);
+		console.log('  Loaded Metadata: ' + s.loadedMetadataRpc);
+		console.log('  Pause: ' + s.pauseRpc);
+		console.log('  Playing: ' + s.playingRpc);
+		console.log('  Play: ' + s.playRpc);
+		console.log('  Seeked: ' + s.seekedRpc);
+		console.log('  Volume Change: ' + s.volumeChangeRpc);
+		console.log('  Loaded Data: ' + s.loadedDataRpc);
 	}
 	
-	/* Split options into separate objects */
-	var rpco = {
-		playbackEndedRpc: s.playbackEndedRpc,
-		canPlayRpc: s.canPlayRpc,
-		loadedMetadataRpc: s.loadedMetadataRpc,
-		pauseRpc: s.pauseRpc,
-		playingRpc: s.playingRpc,
-		playRpc: s.playRpc,
-		seekedRpc: s.seekedRpc,
-		volumeChangeRpc: s.volumeChangeRpc,
-		loadedDataRpc: s.loadedDataRpc
-	}
+	function rpcOptions() {
+		return {
+			playbackEndedRpc: s.playbackEndedRpc,
+			canPlayRpc: s.canPlayRpc,
+			loadedMetadataRpc: s.loadedMetadataRpc,
+			pauseRpc: s.pauseRpc,
+			playingRpc: s.playingRpc,
+			playRpc: s.playRpc,
+			seekedRpc: s.seekedRpc,
+			volumeChangeRpc: s.volumeChangeRpc,
+			loadedDataRpc: s.loadedDataRpc
+		};
+	};
 	
-	var mpo = {
-		uid: s.uid,
-		playerType: s.playerType,
-		flash: s.flashFallbackEnabled,
-		silverlight: s.silverlightFallbackEnabled
+	function playerOptions() {
+		return {
+			uid: s.uid,
+			playerType: s.playerType,
+			flash: s.flashFallbackEnabled,
+			silverlight: s.silverlightFallbackEnabled
+		};
 	}
 	
 	/* RPC call from server to initialize the player */
 	t.initPlayer = function() {
-		if (d) console.log(l + 'INITIALIZING PLAYER');
-		p = new mejsplayer.player(e, o, mpo, rpco);
+		if (d) console.log('INITIALIZING PLAYER');
+		if (d) console.log('Player options ' + JSON.stringify(playerOptions()));
+		if (d) console.log('RPC options ' + JSON.stringify(rpcOptions()));
+		p = new mejsplayer.player(e, o, playerOptions(), rpcOptions());
 		if (s.source) t.updateSource();
-	}
+	};
 	
 	/* Update the sources of the media player from information in the shared state */
 	t.updateSource = function() {
-		if (d) console.log(l + 'updateSource(). Source is ' + s.source.src + ' [' + s.source.type + ']');
+		if (d) console.log('updateSource(). Source is ' + s.source.src + ' [' + s.source.type + ']');
 		if (!s.source) { 
-			if (d) console.log(l + 'updateSource() was called, but no source is set in the shared state.'); 
+			if (d) console.log('updateSource() was called, but no source is set in the shared state.'); 
 			return; 
 		}
 		if (!p) { 
-			if (d) console.log(l + 'updateSource() was called, but the player has not been initialized.'); 
+			if (d) console.log('updateSource() was called, but the player has not been initialized.'); 
 			return; 
 		}
 		/* Copy shared state source */
 		var src = {
 				src: s.source.src,
 				type: s.source.type
-		}
+		};
 		/* Complete the src path based on resource type */
 		if (src.src.indexOf('app://') === 0) { 
 			/* File resource */
@@ -106,7 +110,7 @@ com_kbdunn_vaadin_addons_mediaelement_MediaElementPlayer = function () {
 			src.type = 'video/youtube';
 		}
 		p.setSource(src);
-	}
+	};
 	
 	/* Get window URL */
 	function getURL() {
@@ -119,79 +123,96 @@ com_kbdunn_vaadin_addons_mediaelement_MediaElementPlayer = function () {
 	
 	/* Update shared state with player state */
 	t.updateState = function() {
-		if (d) console.log(l + 'Updating shared state');
-		var ps = p.getState();
-		t.updateSharedState(ps.paused, 
-				ps.ended, 
-				ps.seeking, 
-				ps.duration, 
-				ps.muted, 
-				ps.volume, 
-				ps.currentTime,
-				p.getPlayerType());
-	}
+		debounce(function() {
+			if (d) console.log('Updating shared state');
+			var ps = p.getState();
+			t.updatePlayerState(ps.paused, 
+					ps.ended, 
+					ps.seeking, 
+					!ps.duration ? 0 : ps.duration, 
+					ps.muted, 
+					ps.volume, 
+					ps.currentTime
+				);
+		}, 100).apply();
+	};
+	
+	function debounce(func, wait, immediate) {
+		var timeout;
+		return function() {
+			var context = this, args = arguments;
+			var later = function() {
+				timeout = null;
+				if (!immediate) func.apply(context, args);
+			};
+			var callNow = immediate && !timeout;
+			clearTimeout(timeout);
+			timeout = setTimeout(later, wait);
+			if (callNow) func.apply(context, args);
+		};
+	};
 	
 	/* RPC calls from server */
 	t.play = function() {
-		if (d) console.log(l + 'Received play() RPC call');
+		if (d) console.log('Received play() RPC call');
 		p.play();
-	}
+	};
 	t.pause = function() {
-		if (d) console.log(l + 'Received pause() RPC call');
+		if (d) console.log('Received pause() RPC call');
 		p.pause();
-	}
+	};
 	t.mute = function () {
-		if (d) console.log(l + 'Received mute() RPC call');
+		if (d) console.log('Received mute() RPC call');
 		p.mute();
-	}
+	};
 	t.unmute = function () {
-		if (d) console.log(l + 'Received unmute() RPC call');
+		if (d) console.log('Received unmute() RPC call');
 		p.unmute();
-	}
+	};
 	t.setVolume = function (volume) {
-		if (d) console.log(l + 'Received setVolume() RPC call');
+		if (d) console.log('Received setVolume() RPC call');
 		p.setVolume(volume);
-	}
+	};
 	t.setCurrentTime = function (currentTime) {
-		if (d) console.log(l + 'Received setCurrentTime() RPC call');
+		if (d) console.log('Received setCurrentTime() RPC call');
 		p.setCurrentTime(currentTime);
-	}
+	};
 	
 	/* RPC calls to server */
 	mejsplayer.player.prototype.notifyPlaybackEnded = function () {
 		t.updateState();
 		t.notifyPlaybackEnded();
-	}
+	};
 	mejsplayer.player.prototype.notifyCanPlay = function () {
 		t.updateState();
 		t.notifyCanPlay();
-	}
+	};
 	mejsplayer.player.prototype.notifyLoadedData = function () {
 		t.updateState();
 		t.notifyLoadedData();
-	}
+	};
 	mejsplayer.player.prototype.notifySeeked = function () {
 		t.updateState();
 		t.notifySeeked();
-	}
+	};
 	mejsplayer.player.prototype.notifyPlaying = function () {
 		t.updateState();
 		t.notifyPlaying();
-	}
+	};
 	mejsplayer.player.prototype.notifyPaused = function () {
 		t.updateState();
 		t.notifyPaused();
-	}
+	};
 	mejsplayer.player.prototype.notifyPlayed = function () {
 		t.updateState();
 		t.notifyPlayed();
-	}
+	};
 	mejsplayer.player.prototype.notifyLoadedMetadata = function () {
 		t.updateState();
 		t.notifyLoadedMetadata();
-	}
+	};
 	mejsplayer.player.prototype.notifyVolumeChanged = function () {
 		t.updateState();
 		t.notifyVolumeChanged();
-	}
-}
+	};
+};
