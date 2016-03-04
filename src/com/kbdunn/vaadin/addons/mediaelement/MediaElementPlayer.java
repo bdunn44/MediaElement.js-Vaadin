@@ -28,6 +28,8 @@ import com.vaadin.ui.JavaScriptFunction;
 
 import elemental.json.JsonArray;
 import elemental.json.JsonException;
+import elemental.json.JsonNull;
+import elemental.json.JsonObject;
 
 
 @JavaScript({"vaadin://addons/mejs-player/mediaelement-2.20.0/jquery.js", "vaadin://addons/mejs-player/mediaelement-2.20.0/mediaelement-and-player.min.js", 
@@ -111,22 +113,42 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
-				paused = arguments.getBoolean(0);
-				ended = arguments.getBoolean(1);
-				seeking = arguments.getBoolean(2);
-				duration = (int) arguments.getNumber(3);
-				muted = arguments.getBoolean(4);
-				volume = (float) arguments.getNumber(5);
-				currentTime = (int) arguments.getNumber(6);
-				for (StateUpdatedListener listener : stateUpdateListeners) {
-					listener.stateUpdated(getMe());
-				}
+				setCurrentState(arguments.getObject(0));
 			}
 		});
 	}
 	
 	private static synchronized int getUid() {
 		return ++globalUid;
+	}
+	
+	/*
+	 * 
+	 * Player state
+	 * 
+	 */
+	
+	@Override
+	protected MediaElementPlayerState getState() {
+		return (MediaElementPlayerState) super.getState();
+	}
+	
+	public void requestPlayerStateUpdate() {
+		callFunction("updateState", new Object[]{});
+	}
+	
+	private void setCurrentState(JsonObject stateObject) {
+		System.out.println("setCurrentState()");
+		paused = stateObject.getBoolean("paused");
+		ended = stateObject.getBoolean("ended");
+		seeking = stateObject.getBoolean("seeking");
+		duration = stateObject.get("duration") instanceof JsonNull ? 0 : (int) stateObject.getNumber("duration");
+		muted = stateObject.getBoolean("muted");
+		volume = (float) stateObject.getNumber("volume");
+		currentTime = (int) stateObject.getNumber("currentTime");
+		for (StateUpdatedListener listener : stateUpdateListeners) {
+			listener.stateUpdated(getMe());
+		}
 	}
 	
 	/*
@@ -314,15 +336,6 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 		return currentTime;
 	}
 	
-	@Override
-	protected MediaElementPlayerState getState() {
-		return (MediaElementPlayerState) super.getState();
-	}
-	
-	public void requestPlayerStateUpdate() {
-		callFunction("updateState", new Object[]{});
-	}
-	
 	/*
 	 * 
 	 * RPC Functions
@@ -335,6 +348,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (PlaybackEndedListener listener : playbackEndedListeners)
 					listener.playbackEnded(getMe());
 			}
@@ -345,6 +359,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (CanPlayListener listener : canPlayListeners)
 					listener.canPlay(getMe());
 			}
@@ -355,6 +370,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (LoadedMetadataListener listener : loadedMetadataListeners)
 					listener.metadataLoaded(getMe());
 			}
@@ -365,6 +381,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (LoadedDataListener listener : loadedDataListeners)
 					listener.dataLoaded(getMe());
 			}
@@ -375,6 +392,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (PausedListener listener : pauseListeners)
 					listener.paused(getMe());
 			}
@@ -385,6 +403,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (PlayingListener listener : playingListeners)
 					listener.playing(getMe());
 			}
@@ -395,6 +414,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (PlayedListener listener : playListeners)
 					listener.played(getMe());
 			}
@@ -405,6 +425,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (SeekedListener listener : seekedListeners)
 					listener.seeked(getMe());
 			}
@@ -415,6 +436,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (VolumeChangedListener listener : volumeChangeListeners)
 					listener.volumeChanged(getMe());
 			}
