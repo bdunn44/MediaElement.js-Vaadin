@@ -4,7 +4,7 @@ com_kbdunn_vaadin_addons_mediaelement_MediaElementPlayer = function () {
     var e = t.getElement();
     var s = t.getState();
     var o = s.options;
-    var d = true; /* debugger */
+    var d = false; /* debugger */
     var p;
     
     if (d) {
