@@ -108,6 +108,8 @@ com_kbdunn_vaadin_addons_mediaelement_MediaElementPlayer = function () {
             src.src = getURL() + src.src.replace('theme://', 'VAADIN/');
         } else if (src.src.indexOf('youtube.com') !== -1 || src.src.indexOf('youtu.be') !== -1) {
             src.type = 'video/youtube';
+        } else if (src.src.indexOf('vimeo.com') !== -1) {
+        	src.type = 'video/vimeo';
         }
         p.setSource(src);
     };
