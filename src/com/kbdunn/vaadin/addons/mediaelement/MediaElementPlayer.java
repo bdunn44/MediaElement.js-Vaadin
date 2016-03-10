@@ -17,10 +17,9 @@ import com.kbdunn.vaadin.addons.mediaelement.interfaces.VolumeChangedListener;
 import com.vaadin.annotations.JavaScript;
 import com.vaadin.annotations.StyleSheet;
 import com.vaadin.server.ExternalResource;
-import com.vaadin.server.FileResource;
+import com.vaadin.server.FontIcon;
 import com.vaadin.server.Resource;
 import com.vaadin.server.ResourceReference;
-import com.vaadin.server.ThemeResource;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.server.VaadinResponse;
 import com.vaadin.ui.AbstractJavaScriptComponent;
@@ -138,7 +137,6 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 	}
 	
 	private void setCurrentState(JsonObject stateObject) {
-		System.out.println("setCurrentState()");
 		paused = stateObject.getBoolean("paused");
 		ended = stateObject.getBoolean("ended");
 		seeking = stateObject.getBoolean("seeking");
@@ -196,19 +194,19 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 	public void setSource(Resource source) {
 		if (source == null) throw new NullPointerException("Source cannot be null");
 		
-		// Check if source is a File, Theme or External resource
-		if (!(source instanceof FileResource || source instanceof ThemeResource || source instanceof ExternalResource)) {
-			throw new UnsupportedOperationException("Only FileResource and ThemeResource resources are supported.");
+		// Check for valid resource
+		if (source instanceof FontIcon) {
+			throw new UnsupportedOperationException("FontIcon resources are not supported.");
 		}
-		// Check that MIME type for File or Theme resource is audio or video
-		if (!(source instanceof ExternalResource) 
+		// Check that MIME type for connector resource is audio or video
+		if (!(source instanceof ExternalResource)
 				&& !(source.getMIMEType().startsWith("audio") || source.getMIMEType().startsWith("video"))) {
 			throw new IllegalArgumentException("Invalid resource MIME type '" + source.getMIMEType() + "'. The resource MIME type must be audio or video");
 		}
-		// Check that the URL of an External resource points to YouTube
+		// Check that the URL of an External resource points to YouTube or Vimeo
 		if (source instanceof ExternalResource 
-				&& !((ExternalResource) source).getURL().matches("(https?://)?(www\\.)?(youtube\\.com|youtu\\.be).*")) {
-			throw new IllegalArgumentException("Only YouTube external resources are allowed");
+				&& !((ExternalResource) source).getURL().matches("(https?://)?(www\\.)?(youtube\\.com|youtu\\.be|vimeo\\.com).*")) {
+			throw new IllegalArgumentException("Only YouTube and Vimeo external resources are allowed");
 		}
 		
 		getState().source = createMediaResource(source, "0");
