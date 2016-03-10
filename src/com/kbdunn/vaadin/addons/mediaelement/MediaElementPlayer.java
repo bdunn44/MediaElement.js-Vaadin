@@ -17,10 +17,9 @@ import com.kbdunn.vaadin.addons.mediaelement.interfaces.VolumeChangedListener;
 import com.vaadin.annotations.JavaScript;
 import com.vaadin.annotations.StyleSheet;
 import com.vaadin.server.ExternalResource;
-import com.vaadin.server.FileResource;
+import com.vaadin.server.FontIcon;
 import com.vaadin.server.Resource;
 import com.vaadin.server.ResourceReference;
-import com.vaadin.server.ThemeResource;
 import com.vaadin.server.VaadinRequest;
 import com.vaadin.server.VaadinResponse;
 import com.vaadin.ui.AbstractJavaScriptComponent;
@@ -28,6 +27,8 @@ import com.vaadin.ui.JavaScriptFunction;
 
 import elemental.json.JsonArray;
 import elemental.json.JsonException;
+import elemental.json.JsonNull;
+import elemental.json.JsonObject;
 
 
 @JavaScript({"vaadin://addons/mejs-player/mediaelement-2.20.0/jquery.js", "vaadin://addons/mejs-player/mediaelement-2.20.0/mediaelement-and-player.min.js", 
@@ -111,22 +112,41 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
-				paused = arguments.getBoolean(0);
-				ended = arguments.getBoolean(1);
-				seeking = arguments.getBoolean(2);
-				duration = (int) arguments.getNumber(3);
-				muted = arguments.getBoolean(4);
-				volume = (float) arguments.getNumber(5);
-				currentTime = (int) arguments.getNumber(6);
-				for (StateUpdatedListener listener : stateUpdateListeners) {
-					listener.stateUpdated(getMe());
-				}
+				setCurrentState(arguments.getObject(0));
 			}
 		});
 	}
 	
 	private static synchronized int getUid() {
 		return ++globalUid;
+	}
+	
+	/*
+	 * 
+	 * Player state
+	 * 
+	 */
+	
+	@Override
+	protected MediaElementPlayerState getState() {
+		return (MediaElementPlayerState) super.getState();
+	}
+	
+	public void requestPlayerStateUpdate() {
+		callFunction("updateState", new Object[]{});
+	}
+	
+	private void setCurrentState(JsonObject stateObject) {
+		paused = stateObject.getBoolean("paused");
+		ended = stateObject.getBoolean("ended");
+		seeking = stateObject.getBoolean("seeking");
+		duration = stateObject.get("duration") instanceof JsonNull ? 0 : (int) stateObject.getNumber("duration");
+		muted = stateObject.getBoolean("muted");
+		volume = (float) stateObject.getNumber("volume");
+		currentTime = (int) stateObject.getNumber("currentTime");
+		for (StateUpdatedListener listener : stateUpdateListeners) {
+			listener.stateUpdated(getMe());
+		}
 	}
 	
 	/*
@@ -174,19 +194,19 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 	public void setSource(Resource source) {
 		if (source == null) throw new NullPointerException("Source cannot be null");
 		
-		// Check if source is a File, Theme or External resource
-		if (!(source instanceof FileResource || source instanceof ThemeResource || source instanceof ExternalResource)) {
-			throw new UnsupportedOperationException("Only FileResource and ThemeResource resources are supported.");
+		// Check for valid resource
+		if (source instanceof FontIcon) {
+			throw new UnsupportedOperationException("FontIcon resources are not supported.");
 		}
-		// Check that MIME type for File or Theme resource is audio or video
-		if (!(source instanceof ExternalResource) 
+		// Check that MIME type for connector resource is audio or video
+		if (!(source instanceof ExternalResource)
 				&& !(source.getMIMEType().startsWith("audio") || source.getMIMEType().startsWith("video"))) {
 			throw new IllegalArgumentException("Invalid resource MIME type '" + source.getMIMEType() + "'. The resource MIME type must be audio or video");
 		}
-		// Check that the URL of an External resource points to YouTube
+		// Check that the URL of an External resource points to YouTube or Vimeo
 		if (source instanceof ExternalResource 
-				&& !((ExternalResource) source).getURL().matches("(https?://)?(www\\.)?(youtube\\.com|youtu\\.be).*")) {
-			throw new IllegalArgumentException("Only YouTube external resources are allowed");
+				&& !((ExternalResource) source).getURL().matches("(https?://)?(www\\.)?(youtube\\.com|youtu\\.be|vimeo\\.com).*")) {
+			throw new IllegalArgumentException("Only YouTube and Vimeo external resources are allowed");
 		}
 		
 		getState().source = createMediaResource(source, "0");
@@ -314,15 +334,6 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 		return currentTime;
 	}
 	
-	@Override
-	protected MediaElementPlayerState getState() {
-		return (MediaElementPlayerState) super.getState();
-	}
-	
-	public void requestPlayerStateUpdate() {
-		callFunction("updateState", new Object[]{});
-	}
-	
 	/*
 	 * 
 	 * RPC Functions
@@ -335,6 +346,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (PlaybackEndedListener listener : playbackEndedListeners)
 					listener.playbackEnded(getMe());
 			}
@@ -345,6 +357,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (CanPlayListener listener : canPlayListeners)
 					listener.canPlay(getMe());
 			}
@@ -355,6 +368,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (LoadedMetadataListener listener : loadedMetadataListeners)
 					listener.metadataLoaded(getMe());
 			}
@@ -365,6 +379,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (LoadedDataListener listener : loadedDataListeners)
 					listener.dataLoaded(getMe());
 			}
@@ -375,6 +390,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (PausedListener listener : pauseListeners)
 					listener.paused(getMe());
 			}
@@ -385,6 +401,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (PlayingListener listener : playingListeners)
 					listener.playing(getMe());
 			}
@@ -395,6 +412,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (PlayedListener listener : playListeners)
 					listener.played(getMe());
 			}
@@ -405,6 +423,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (SeekedListener listener : seekedListeners)
 					listener.seeked(getMe());
 			}
@@ -415,6 +434,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
+				setCurrentState(arguments.getObject(0));
 				for (VolumeChangedListener listener : volumeChangeListeners)
 					listener.volumeChanged(getMe());
 			}
