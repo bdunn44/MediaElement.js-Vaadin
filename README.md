@@ -46,8 +46,8 @@ Known Issues
 =============
 
 * The Vimeo player does not support RPC calls. 
-* For best results use `FileResource`s as media sources. Known issues with other types of resources include:
-	* `ClassResource` - frequent `java.nio.channels.ClosedChannelException`s.
+* For best results use `FileResource` for media sources. Known issues with other types of resources include:
+	* `ClassResource` - frequent `java.nio.channels.ClosedChannelException`.
 	* `ThemeResource` - seeking doesn't work in Chrome.
 
 
