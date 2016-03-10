@@ -60,8 +60,7 @@ FileTypeResolver.addExtension("avi", "video/x-msvideo");
 MIME type mappings may also need to be configured for your servlet container. For example the following code will configure these mappings for embedded Jetty9:
 
 ```java
-...
-ServletHolder vaadinServletHolder = new ServletHolder(new VdnServlet());
+WebAppContext context = new WebAppContext();
 MimeTypes mimeTypes = context.getMimeTypes();
 mimeTypes.addMimeMapping("ogg", "audio/ogg");
 mimeTypes.addMimeMapping("ogv", "video/ogg");
