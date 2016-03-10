@@ -42,6 +42,39 @@ layout.addComponent(videoPlayer);
 videoPlayer.setSource(new ExternalResource("https://youtu.be/kh29_SERH0Y"));
 ```
 
+MIME Type Configuration
+=======================
+You must configure MIME type mappings for this addon to function properly. Vaadin resources derive MIME types using  `com.vaadin.util.FileTypeResolver`. The following MIME mappings are recommended to be added upon servlet initialization:
+
+```java
+FileTypeResolver.addExtension("ogg", "audio/ogg");
+FileTypeResolver.addExtension("ogv", "video/ogg");
+FileTypeResolver.addExtension("mp4", "video/mp4");
+FileTypeResolver.addExtension("webm", "video/webm");
+FileTypeResolver.addExtension("wmv", "video/x-ms-wmv");
+FileTypeResolver.addExtension("wma", "audio/x-ms-wma");
+FileTypeResolver.addExtension("flv", "video/x-flv");
+FileTypeResolver.addExtension("avi", "video/x-msvideo");
+```
+
+MIME type mappings may also need to be configured for your servlet container. For example the following code will configure these mappings for embedded Jetty9:
+
+```java
+...
+ServletHolder vaadinServletHolder = new ServletHolder(new VdnServlet());
+MimeTypes mimeTypes = context.getMimeTypes();
+mimeTypes.addMimeMapping("ogg", "audio/ogg");
+mimeTypes.addMimeMapping("ogv", "video/ogg");
+mimeTypes.addMimeMapping("mp4", "video/mp4");
+mimeTypes.addMimeMapping("webm", "video/webm");
+mimeTypes.addMimeMapping("wmv", "video/x-ms-wmv");
+mimeTypes.addMimeMapping("wma", "audio/x-ms-wma");
+mimeTypes.addMimeMapping("flv", "video/x-flv");
+mimeTypes.addMimeMapping("avi", "video/x-msvideo");
+context.setMimeTypes(mimeTypes);
+...
+```
+
 Known Issues
 =============
 
