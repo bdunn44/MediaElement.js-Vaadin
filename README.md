@@ -13,7 +13,7 @@ Vaadin Directory: http://vaadin.com/addon/mediaelementjs-player
 
 
 Code Example
-=============
+------------
 ```java
 import com.kbdunn.vaadin.addons.mediaelement.MediaElementPlayer;
 
@@ -39,7 +39,7 @@ videoPlayer.setSource(new ExternalResource("https://youtu.be/kh29_SERH0Y"));
 ```
 
 MIME Type Configuration
-=======================
+-----------------------
 You must configure MIME type mappings for this addon to function properly. Vaadin resources derive MIME types using  `com.vaadin.util.FileTypeResolver`. The following MIME mappings are recommended to be added upon servlet initialization:
 
 ```java
@@ -71,7 +71,7 @@ context.setMimeTypes(mimeTypes);
 ```
 
 Known Issues
-=============
+------------
 
 * The Vimeo player does not support RPC calls or event listeners. This is a current MEJS limitation.
 * For best results use `FileResource` for media sources. Known issues with other types of resources include:
