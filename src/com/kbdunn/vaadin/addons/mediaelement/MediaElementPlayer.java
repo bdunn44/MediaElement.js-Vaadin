@@ -16,6 +16,7 @@ import com.kbdunn.vaadin.addons.mediaelement.interfaces.StateUpdatedListener;
 import com.kbdunn.vaadin.addons.mediaelement.interfaces.VolumeChangedListener;
 import com.vaadin.annotations.JavaScript;
 import com.vaadin.annotations.StyleSheet;
+import com.vaadin.server.ConnectorResource;
 import com.vaadin.server.ExternalResource;
 import com.vaadin.server.FontIcon;
 import com.vaadin.server.Resource;
@@ -37,6 +38,7 @@ import elemental.json.JsonObject;
 public class MediaElementPlayer extends AbstractJavaScriptComponent implements Serializable {
 	
 	private static final long serialVersionUID = 434066435674155085L;
+	private static final String RESOURCE_KEY = "0";
 	private static int globalUid = 0;
 	
 	public enum Type {
@@ -73,6 +75,10 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 	private float volume;
 	private int currentTime;
 	
+	/* Queued resource */
+	/* This is set by #createMediaResource(). If a reference is unable to be created it will be done once attached */
+	private Resource queuedResource;
+	
 	/*
 	 * 
 	 * Constructors
@@ -80,22 +86,22 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 	 */
 	
 	public MediaElementPlayer() {
-		init(Type.AUDIO, new MediaElementPlayerOptions(), true, true);
+		this(Type.AUDIO, new MediaElementPlayerOptions(), true, true);
 	}
 	
 	public MediaElementPlayer(MediaElementPlayerOptions options) {
-		init(Type.AUDIO, options, true, true);
+		this(Type.AUDIO, options, true, true);
 	}
 	
 	public MediaElementPlayer(MediaElementPlayer.Type playerType) {
-		init(playerType, new MediaElementPlayerOptions(), true, true);
+		this(playerType, new MediaElementPlayerOptions(), true, true);
 	}
 	
 	public MediaElementPlayer(MediaElementPlayer.Type playerType, MediaElementPlayerOptions options) {
-		init(playerType, options, true, true);
+		this(playerType, options, true, true);
 	}
 	
-	private void init(MediaElementPlayer.Type playerType, MediaElementPlayerOptions options, boolean flashFallback, boolean silverlightFallback) {
+	public MediaElementPlayer(MediaElementPlayer.Type playerType, MediaElementPlayerOptions options, boolean flashFallback, boolean silverlightFallback) {
 		if (playerType == null) throw new NullPointerException("Player Type cannot be null");
 		if (options == null) throw new NullPointerException("Player Options cannot be null");
 		
@@ -113,6 +119,31 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			@Override
 			public void call(JsonArray arguments) throws JsonException {
 				setCurrentState(arguments.getObject(0));
+			}
+		});
+		
+		// Attach listener to register the queued resource, if one exists
+		addAttachListener(new AttachListener() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void attach(AttachEvent e) {
+				if (queuedResource != null) {
+					synchronized(MediaElementPlayer.this) {
+						setSource(queuedResource);
+						queuedResource = null;
+					}
+				}
+			}
+		});
+		
+		// Detach listener to pause the player in case it is currently playing
+		addDetachListener(new DetachListener() {
+			private static final long serialVersionUID = 1L;
+			
+			@Override
+			public void detach(DetachEvent event) {
+				pause();
 			}
 		});
 	}
@@ -145,7 +176,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 		volume = (float) stateObject.getNumber("volume");
 		currentTime = (int) stateObject.getNumber("currentTime");
 		for (StateUpdatedListener listener : stateUpdateListeners) {
-			listener.stateUpdated(getMe());
+			listener.stateUpdated(MediaElementPlayer.this);
 		}
 	}
 	
@@ -172,7 +203,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 	@Override
 	public boolean handleConnectorRequest(VaadinRequest request, VaadinResponse response, String path) {
 		try {
-			if (path.startsWith("0")) {
+			if (path.startsWith(RESOURCE_KEY)) {
 				response.setHeader("Accept-Ranges", "bytes"); 
 			}
 			return super.handleConnectorRequest(request, response, path);
@@ -188,7 +219,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 	 */
 	
 	public Resource getSource() {
-		return getResource("0");
+		return getResource(RESOURCE_KEY);
 	}
 	
 	public void setSource(Resource source) {
@@ -209,14 +240,18 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			throw new IllegalArgumentException("Only YouTube and Vimeo external resources are allowed");
 		}
 		
-		getState().source = createMediaResource(source, "0");
+		getState().source = createMediaResource(source);
 		callFunction("updateSource", new Object[]{});
 	}
 	
-	private MediaSource createMediaResource(Resource source, String key) {
-		setResource(key, source);
+	private MediaSource createMediaResource(Resource source) {
+		if (source instanceof ConnectorResource && getUI() == null) {
+			queuedResource = source;
+			return null;
+		} 
+		setResource(RESOURCE_KEY, source);
 		return new MediaSource(
-				new ResourceReference(source, this, key).getURL(), source.getMIMEType());
+				new ResourceReference(source, this, RESOURCE_KEY).getURL(), source.getMIMEType());
 	}
 	
 	/*
@@ -348,7 +383,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			public void call(JsonArray arguments) throws JsonException {
 				setCurrentState(arguments.getObject(0));
 				for (PlaybackEndedListener listener : playbackEndedListeners)
-					listener.playbackEnded(getMe());
+					listener.playbackEnded(MediaElementPlayer.this);
 			}
 		});
 		
@@ -359,7 +394,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			public void call(JsonArray arguments) throws JsonException {
 				setCurrentState(arguments.getObject(0));
 				for (CanPlayListener listener : canPlayListeners)
-					listener.canPlay(getMe());
+					listener.canPlay(MediaElementPlayer.this);
 			}
 		});
 		
@@ -370,7 +405,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			public void call(JsonArray arguments) throws JsonException {
 				setCurrentState(arguments.getObject(0));
 				for (LoadedMetadataListener listener : loadedMetadataListeners)
-					listener.metadataLoaded(getMe());
+					listener.metadataLoaded(MediaElementPlayer.this);
 			}
 		});
 		
@@ -381,7 +416,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			public void call(JsonArray arguments) throws JsonException {
 				setCurrentState(arguments.getObject(0));
 				for (LoadedDataListener listener : loadedDataListeners)
-					listener.dataLoaded(getMe());
+					listener.dataLoaded(MediaElementPlayer.this);
 			}
 		});
 		
@@ -392,7 +427,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			public void call(JsonArray arguments) throws JsonException {
 				setCurrentState(arguments.getObject(0));
 				for (PausedListener listener : pauseListeners)
-					listener.paused(getMe());
+					listener.paused(MediaElementPlayer.this);
 			}
 		});
 		
@@ -403,7 +438,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			public void call(JsonArray arguments) throws JsonException {
 				setCurrentState(arguments.getObject(0));
 				for (PlayingListener listener : playingListeners)
-					listener.playing(getMe());
+					listener.playing(MediaElementPlayer.this);
 			}
 		});
 		
@@ -414,7 +449,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			public void call(JsonArray arguments) throws JsonException {
 				setCurrentState(arguments.getObject(0));
 				for (PlayedListener listener : playListeners)
-					listener.played(getMe());
+					listener.played(MediaElementPlayer.this);
 			}
 		});
 		
@@ -425,7 +460,7 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			public void call(JsonArray arguments) throws JsonException {
 				setCurrentState(arguments.getObject(0));
 				for (SeekedListener listener : seekedListeners)
-					listener.seeked(getMe());
+					listener.seeked(MediaElementPlayer.this);
 			}
 		});
 		
@@ -436,13 +471,9 @@ public class MediaElementPlayer extends AbstractJavaScriptComponent implements S
 			public void call(JsonArray arguments) throws JsonException {
 				setCurrentState(arguments.getObject(0));
 				for (VolumeChangedListener listener : volumeChangeListeners)
-					listener.volumeChanged(getMe());
+					listener.volumeChanged(MediaElementPlayer.this);
 			}
 		});
-	}
-	
-	private MediaElementPlayer getMe() {
-		return this;
 	}
 	
 	/*
