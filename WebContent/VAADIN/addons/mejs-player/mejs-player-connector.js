@@ -98,14 +98,9 @@ com_kbdunn_vaadin_addons_mediaelement_MediaElementPlayer = function () {
                 src: s.source.src,
                 type: s.source.type
         };
-        /* Complete the src path based on resource type */
-        if (src.src.indexOf('app://') === 0) { 
-            /* File resource */
-            src.src = getURL() + src.src.replace('app://', '');
-            
-        } else if (src.src.indexOf('theme://') === 0) { 
-            /* Theme resource */
-            src.src = getURL() + src.src.replace('theme://', 'VAADIN/');
+        
+        if (src.src.indexOf('app://') === 0 || src.src.indexOf('theme://') === 0) { 
+        	src.src = t.translateVaadinUri(src.src);
         } else if (src.src.indexOf('youtube.com') !== -1 || src.src.indexOf('youtu.be') !== -1) {
             src.type = 'video/youtube';
         } else if (src.src.indexOf('vimeo.com') !== -1) {
@@ -113,15 +108,6 @@ com_kbdunn_vaadin_addons_mediaelement_MediaElementPlayer = function () {
         }
         p.setSource(src);
     };
-    
-    /* Get window URL */
-    function getURL() {
-        /* IE fix */
-        if (!window.location.origin) {
-            window.location.origin = window.location.protocol + '//' + window.location.hostname + (window.location.port ? ':' + window.location.port : '');
-        }
-        return window.location.origin + window.location.pathname;
-    }
     
     /* Update shared state with player state */
     t.updateState = function() {
